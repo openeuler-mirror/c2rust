@@ -1,0 +1,8 @@
+merge_imports = true
+newline_style = "Unix"
+edition = "2018"
+normalize_doc_attributes = true
+match_block_trailing_comma = true
+use_try_shorthand = true
+version = "Two"
+
