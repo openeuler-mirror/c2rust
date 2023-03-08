@@ -1,31 +1,33 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_iter_init_default() -> json_object_iterator;
-    fn json_object_iter_begin(obj: *mut json_object) -> json_object_iterator;
-    fn json_object_iter_end(obj: *const json_object) -> json_object_iterator;
-    fn json_object_iter_next(iter: *mut json_object_iterator);
-    fn json_object_iter_peek_name(
-        iter: *const json_object_iterator,
-    ) -> *const libc::c_char;
-    fn json_object_iter_peek_value(
-        iter: *const json_object_iterator,
-    ) -> *mut json_object;
-    fn json_object_iter_equal(
-        iter1: *const json_object_iterator,
-        iter2: *const json_object_iterator,
-    ) -> json_bool;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type json_bool = libc::c_int;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_object_iterator {
-    pub opaque_: *const libc::c_void,
-}
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_object_iterator::json_object_iter_begin;
+pub use crate::json_object_iterator::json_object_iter_end;
+pub use crate::json_object_iterator::json_object_iter_equal;
+pub use crate::json_object_iterator::json_object_iter_init_default;
+pub use crate::json_object_iterator::json_object_iter_next;
+pub use crate::json_object_iterator::json_object_iter_peek_name;
+pub use crate::json_object_iterator::json_object_iter_peek_value;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::json_object::json_bool;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object_iterator::json_object_iterator;
 unsafe fn main_0(
     mut atgc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

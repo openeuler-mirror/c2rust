@@ -27,23 +27,14 @@ extern "C" {
         _: libc::c_ulong,
     ) -> *mut libc::c_void;
 }
-pub type __builtin_va_list = [__va_list_tag; 1];
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct __va_list_tag {
-    pub gp_offset: libc::c_uint,
-    pub fp_offset: libc::c_uint,
-    pub overflow_arg_area: *mut libc::c_void,
-    pub reg_save_area: *mut libc::c_void,
-}
-pub type va_list = __builtin_va_list;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
+pub use crate::debug::__builtin_va_list;
+// #[derive(Copy, Clone)]
+
+pub use crate::debug::__va_list_tag;
+pub use crate::debug::va_list;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
 #[no_mangle]
 pub unsafe extern "C" fn printbuf_new() -> *mut printbuf {
     let mut p: *mut printbuf = 0 as *mut printbuf;

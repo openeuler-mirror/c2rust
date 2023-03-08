@@ -1,19 +1,23 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn puts(__s: *const libc::c_char) -> libc::c_int;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_new_string_len(
-        s: *const libc::c_char,
-        len: libc::c_int,
-    ) -> *mut json_object;
-    fn json_object_get_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_get_string_len(obj: *const json_object) -> libc::c_int;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
 }
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_get_string;
+pub use crate::json_object::json_object_get_string_len;
+pub use crate::json_object::json_object_new_string_len;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_tokener::json_tokener_parse;
 unsafe fn main_0() -> libc::c_int {
     let mut input: *const libc::c_char = b" \0 \0" as *const u8 as *const libc::c_char;
     let mut expected: *const libc::c_char = b"\" \\u0000 \"\0" as *const u8

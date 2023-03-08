@@ -1,8 +1,9 @@
 use ::libc;
 extern "C" {
-    fn _json_c_strerror(errno_in: libc::c_int) -> *mut libc::c_char;
+    
     fn puts(__s: *const libc::c_char) -> libc::c_int;
 }
+pub use crate::strerror_override::_json_c_strerror;
 unsafe fn main_0(
     mut argc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

@@ -3,7 +3,7 @@ extern "C" {
     pub type _IO_wide_data;
     pub type _IO_codecvt;
     pub type _IO_marker;
-    pub type json_object;
+    
     fn __assert_fail(
         __assertion: *const libc::c_char,
         __file: *const libc::c_char,
@@ -31,24 +31,27 @@ extern "C" {
     ) -> *mut libc::c_void;
     fn strerror(_: libc::c_int) -> *mut libc::c_char;
     fn read(__fd: libc::c_int, __buf: *mut libc::c_void, __nbytes: size_t) -> ssize_t;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_to_json_string_ext(
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> *const libc::c_char;
-    fn json_tokener_error_desc(jerr: json_tokener_error) -> *const libc::c_char;
-    fn json_tokener_get_error(tok: *mut json_tokener) -> json_tokener_error;
-    fn json_tokener_new_ex(depth: libc::c_int) -> *mut json_tokener;
-    fn json_tokener_free(tok: *mut json_tokener);
-    fn json_tokener_set_flags(tok: *mut json_tokener, flags: libc::c_int);
-    fn json_tokener_parse_ex(
-        tok: *mut json_tokener,
-        str: *const libc::c_char,
-        len: libc::c_int,
-    ) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn getrusage(__who: __rusage_who_t, __usage: *mut rusage) -> libc::c_int;
 }
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_object::json_object_to_json_string_ext;
+pub use crate::json_tokener::json_tokener_error_desc;
+pub use crate::json_tokener::json_tokener_free;
+pub use crate::json_tokener::json_tokener_get_error;
+pub use crate::json_tokener::json_tokener_new_ex;
+pub use crate::json_tokener::json_tokener_parse_ex;
+pub use crate::json_tokener::json_tokener_set_flags;
+pub use crate::json_object::json_object;
 pub type __off_t = libc::c_long;
 pub type __off64_t = libc::c_long;
 pub type __time_t = libc::c_long;

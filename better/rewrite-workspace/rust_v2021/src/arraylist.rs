@@ -27,7 +27,7 @@ extern "C" {
         _: libc::c_ulong,
     ) -> *mut libc::c_void;
 }
-pub type size_t = libc::c_ulong;
+pub use crate::apps::json_parse::size_t;
 pub type __compar_fn_t = Option::<
     unsafe extern "C" fn(*const libc::c_void, *const libc::c_void) -> libc::c_int,
 >;

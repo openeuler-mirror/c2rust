@@ -1,6 +1,6 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn __assert_fail(
         __assertion: *const libc::c_char,
         __file: *const libc::c_char,
@@ -10,55 +10,46 @@ extern "C" {
     fn __errno_location() -> *mut libc::c_int;
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_is_type(obj: *const json_object, type_0: json_type) -> libc::c_int;
-    fn json_object_new_object() -> *mut json_object;
-    fn json_object_object_get(
-        obj: *const json_object,
-        key: *const libc::c_char,
-    ) -> *mut json_object;
-    fn json_object_new_array() -> *mut json_object;
-    fn json_object_array_add(
-        obj: *mut json_object,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_array_get_idx(
-        obj: *const json_object,
-        idx: size_t,
-    ) -> *mut json_object;
-    fn json_object_new_int(i: int32_t) -> *mut json_object;
-    fn json_object_get_int(obj: *const json_object) -> int32_t;
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
-    fn json_object_get_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_equal(obj1: *mut json_object, obj2: *mut json_object) -> libc::c_int;
-    fn json_pointer_get(
-        obj: *mut json_object,
-        path: *const libc::c_char,
-        res: *mut *mut json_object,
-    ) -> libc::c_int;
-    fn json_pointer_getf(
-        obj: *mut json_object,
-        res: *mut *mut json_object,
-        path_fmt: *const libc::c_char,
-        _: ...
-    ) -> libc::c_int;
-    fn json_pointer_set(
-        obj: *mut *mut json_object,
-        path: *const libc::c_char,
-        value: *mut json_object,
-    ) -> libc::c_int;
-    fn json_pointer_setf(
-        obj: *mut *mut json_object,
-        value: *mut json_object,
-        path_fmt: *const libc::c_char,
-        _: ...
-    ) -> libc::c_int;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type size_t = libc::c_ulong;
-pub type __int32_t = libc::c_int;
-pub type int32_t = __int32_t;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_array_add;
+pub use crate::json_object::json_object_array_get_idx;
+pub use crate::json_object::json_object_equal;
+pub use crate::json_object::json_object_get_int;
+pub use crate::json_object::json_object_get_string;
+pub use crate::json_object::json_object_is_type;
+pub use crate::json_object::json_object_new_array;
+pub use crate::json_object::json_object_new_int;
+pub use crate::json_object::json_object_new_object;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_object_get;
+pub use crate::json_object::json_object_put;
+pub use crate::json_pointer::json_pointer_get;
+pub use crate::json_pointer::json_pointer_getf;
+pub use crate::json_pointer::json_pointer_set;
+pub use crate::json_pointer::json_pointer_setf;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::apps::json_parse::size_t;
+pub use crate::json_object::__int32_t;
+pub use crate::json_object::int32_t;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;

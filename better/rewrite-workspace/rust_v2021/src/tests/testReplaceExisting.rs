@@ -1,48 +1,34 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_new_object() -> *mut json_object;
-    fn json_object_get_object(obj: *const json_object) -> *mut lh_table;
-    fn json_object_object_add(
-        obj: *mut json_object,
-        key: *const libc::c_char,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_object_del(obj: *mut json_object, key: *const libc::c_char);
-    fn mc_set_debug(debug: libc::c_int);
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
 }
-pub type uintptr_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_entry {
-    pub k: *const libc::c_void,
-    pub k_is_constant: libc::c_int,
-    pub v: *const libc::c_void,
-    pub next: *mut lh_entry,
-    pub prev: *mut lh_entry,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_table {
-    pub size: libc::c_int,
-    pub count: libc::c_int,
-    pub head: *mut lh_entry,
-    pub tail: *mut lh_entry,
-    pub table: *mut lh_entry,
-    pub free_fn: Option::<lh_entry_free_fn>,
-    pub hash_fn: Option::<lh_hash_fn>,
-    pub equal_fn: Option::<lh_equal_fn>,
-}
-pub type lh_equal_fn = unsafe extern "C" fn(
-    *const libc::c_void,
-    *const libc::c_void,
-) -> libc::c_int;
-pub type lh_hash_fn = unsafe extern "C" fn(*const libc::c_void) -> libc::c_ulong;
-pub type lh_entry_free_fn = unsafe extern "C" fn(*mut lh_entry) -> ();
+pub use crate::json_object::json_object;
+pub use crate::debug::mc_set_debug;
+pub use crate::json_object::json_object_get_object;
+pub use crate::json_object::json_object_new_object;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_object_add;
+pub use crate::json_object::json_object_object_del;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::uintptr_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_entry;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_table;
+pub use crate::json_object::lh_equal_fn;
+pub use crate::json_object::lh_hash_fn;
+pub use crate::json_object::lh_entry_free_fn;
 #[inline]
 unsafe extern "C" fn lh_entry_next(mut e: *const lh_entry) -> *mut lh_entry {
     return (*e).next;

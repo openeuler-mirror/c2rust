@@ -1,18 +1,11 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
-    fn printbuf_new() -> *mut printbuf;
-    fn printbuf_memappend(
-        p: *mut printbuf,
-        buf: *const libc::c_char,
-        size: libc::c_int,
-    ) -> libc::c_int;
-    fn printbuf_free(p: *mut printbuf);
-    fn json_object_to_json_string_ext(
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> *const libc::c_char;
-    fn _json_c_strerror(errno_in: libc::c_int) -> *mut libc::c_char;
+    
+    
+    
+    
+    
+    
     fn __errno_location() -> *mut libc::c_int;
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn vsnprintf(
@@ -36,38 +29,36 @@ extern "C" {
     fn close(__fd: libc::c_int) -> libc::c_int;
     fn read(__fd: libc::c_int, __buf: *mut libc::c_void, __nbytes: size_t) -> ssize_t;
     fn write(__fd: libc::c_int, __buf: *const libc::c_void, __n: size_t) -> ssize_t;
-    fn json_tokener_error_desc(jerr: json_tokener_error) -> *const libc::c_char;
-    fn json_tokener_get_error(tok: *mut json_tokener) -> json_tokener_error;
-    fn json_tokener_new_ex(depth: libc::c_int) -> *mut json_tokener;
-    fn json_tokener_free(tok: *mut json_tokener);
-    fn json_tokener_parse_ex(
-        tok: *mut json_tokener,
-        str: *const libc::c_char,
-        len: libc::c_int,
-    ) -> *mut json_object;
+    
+    
+    
+    
+    
 }
-pub type __builtin_va_list = [__va_list_tag; 1];
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct __va_list_tag {
-    pub gp_offset: libc::c_uint,
-    pub fp_offset: libc::c_uint,
-    pub overflow_arg_area: *mut libc::c_void,
-    pub reg_save_area: *mut libc::c_void,
-}
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type __ssize_t = libc::c_long;
-pub type int64_t = __int64_t;
-pub type uint64_t = __uint64_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_to_json_string_ext;
+pub use crate::json_tokener::json_tokener_error_desc;
+pub use crate::json_tokener::json_tokener_free;
+pub use crate::json_tokener::json_tokener_get_error;
+pub use crate::json_tokener::json_tokener_new_ex;
+pub use crate::json_tokener::json_tokener_parse_ex;
+pub use crate::printbuf::printbuf_free;
+pub use crate::printbuf::printbuf_memappend;
+pub use crate::printbuf::printbuf_new;
+pub use crate::strerror_override::_json_c_strerror;
+pub use crate::debug::__builtin_va_list;
+// #[derive(Copy, Clone)]
+
+pub use crate::debug::__va_list_tag;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::apps::json_parse::__ssize_t;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint64_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;
@@ -75,10 +66,10 @@ pub const json_type_int: json_type = 3;
 pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
-pub type size_t = libc::c_ulong;
-pub type va_list = __builtin_va_list;
-pub type ssize_t = __ssize_t;
-pub type json_tokener_error = libc::c_uint;
+pub use crate::apps::json_parse::size_t;
+pub use crate::debug::va_list;
+pub use crate::apps::json_parse::ssize_t;
+pub use crate::apps::json_parse::json_tokener_error;
 pub const json_tokener_error_size: json_tokener_error = 15;
 pub const json_tokener_error_parse_utf8_string: json_tokener_error = 14;
 pub const json_tokener_error_parse_comment: json_tokener_error = 13;
@@ -95,7 +86,7 @@ pub const json_tokener_error_parse_eof: json_tokener_error = 3;
 pub const json_tokener_error_depth: json_tokener_error = 2;
 pub const json_tokener_continue: json_tokener_error = 1;
 pub const json_tokener_success: json_tokener_error = 0;
-pub type json_tokener_state = libc::c_uint;
+pub use crate::apps::json_parse::json_tokener_state;
 pub const json_tokener_state_inf: json_tokener_state = 26;
 pub const json_tokener_state_object_field_start_after_sep: json_tokener_state = 25;
 pub const json_tokener_state_array_after_sep: json_tokener_state = 24;
@@ -123,32 +114,12 @@ pub const json_tokener_state_null: json_tokener_state = 3;
 pub const json_tokener_state_finish: json_tokener_state = 2;
 pub const json_tokener_state_start: json_tokener_state = 1;
 pub const json_tokener_state_eatws: json_tokener_state = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_tokener_srec {
-    pub state: json_tokener_state,
-    pub saved_state: json_tokener_state,
-    pub obj: *mut json_object,
-    pub current: *mut json_object,
-    pub obj_field_name: *mut libc::c_char,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_tokener {
-    pub str_0: *mut libc::c_char,
-    pub pb: *mut printbuf,
-    pub max_depth: libc::c_int,
-    pub depth: libc::c_int,
-    pub is_double: libc::c_int,
-    pub st_pos: libc::c_int,
-    pub char_offset: libc::c_int,
-    pub err: json_tokener_error,
-    pub ucs_char: libc::c_uint,
-    pub high_surrogate: libc::c_uint,
-    pub quote_char: libc::c_char,
-    pub stack: *mut json_tokener_srec,
-    pub flags: libc::c_int,
-}
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::json_tokener_srec;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::json_tokener;
 static mut _last_err: [libc::c_char; 256] = unsafe {
     *::std::mem::transmute::<
         &[u8; 256],

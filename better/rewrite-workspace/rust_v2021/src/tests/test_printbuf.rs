@@ -14,30 +14,24 @@ extern "C" {
         _: libc::c_ulong,
     ) -> *mut libc::c_void;
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
-    fn mc_set_debug(debug: libc::c_int);
-    fn printbuf_new() -> *mut printbuf;
-    fn printbuf_memappend(
-        p: *mut printbuf,
-        buf: *const libc::c_char,
-        size: libc::c_int,
-    ) -> libc::c_int;
-    fn printbuf_memset(
-        pb: *mut printbuf,
-        offset: libc::c_int,
-        charvalue: libc::c_int,
-        len: libc::c_int,
-    ) -> libc::c_int;
-    fn sprintbuf(p: *mut printbuf, msg: *const libc::c_char, _: ...) -> libc::c_int;
-    fn printbuf_reset(p: *mut printbuf);
-    fn printbuf_free(p: *mut printbuf);
+    
+    
+    
+    
+    
+    
+    
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
+pub use crate::debug::mc_set_debug;
+pub use crate::printbuf::printbuf_free;
+pub use crate::printbuf::printbuf_memappend;
+pub use crate::printbuf::printbuf_memset;
+pub use crate::printbuf::printbuf_new;
+pub use crate::printbuf::printbuf_reset;
+pub use crate::printbuf::sprintbuf;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
 unsafe extern "C" fn test_basic_printbuf_memset() {
     let mut pb: *mut printbuf = 0 as *mut printbuf;
     printf(

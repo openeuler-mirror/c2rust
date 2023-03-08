@@ -2,13 +2,15 @@ use ::libc;
 extern "C" {
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn strcpy(_: *mut libc::c_char, _: *const libc::c_char) -> *mut libc::c_char;
-    fn json_parse_int64(buf: *const libc::c_char, retval: *mut int64_t) -> libc::c_int;
-    fn json_parse_uint64(buf: *const libc::c_char, retval: *mut uint64_t) -> libc::c_int;
+    
+    
 }
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type int64_t = __int64_t;
-pub type uint64_t = __uint64_t;
+pub use crate::json_util::json_parse_int64;
+pub use crate::json_util::json_parse_uint64;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint64_t;
 #[no_mangle]
 pub unsafe extern "C" fn checkit(mut buf: *const libc::c_char) {
     let mut cint64: int64_t = -(666 as libc::c_int) as int64_t;
