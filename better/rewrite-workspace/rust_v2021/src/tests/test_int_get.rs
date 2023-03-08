@@ -1,6 +1,6 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn __assert_fail(
         __assertion: *const libc::c_char,
         __file: *const libc::c_char,
@@ -9,21 +9,30 @@ extern "C" {
     ) -> !;
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn __errno_location() -> *mut libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_new_int(i: int32_t) -> *mut json_object;
-    fn json_object_new_int64(i: int64_t) -> *mut json_object;
-    fn json_object_new_uint64(i: uint64_t) -> *mut json_object;
-    fn json_object_get_int(obj: *const json_object) -> int32_t;
-    fn json_object_get_int64(obj: *const json_object) -> int64_t;
-    fn json_object_get_uint64(obj: *const json_object) -> uint64_t;
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type __int32_t = libc::c_int;
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type int32_t = __int32_t;
-pub type int64_t = __int64_t;
-pub type uint64_t = __uint64_t;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_get_int;
+pub use crate::json_object::json_object_get_int64;
+pub use crate::json_object::json_object_get_uint64;
+pub use crate::json_object::json_object_new_int;
+pub use crate::json_object::json_object_new_int64;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_new_uint64;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::__int32_t;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::json_object::int32_t;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint64_t;
 unsafe fn main_0(
     mut argc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

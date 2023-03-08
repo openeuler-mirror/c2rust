@@ -1,31 +1,39 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_is_type(obj: *const json_object, type_0: json_type) -> libc::c_int;
-    fn json_object_get_type(obj: *const json_object) -> json_type;
-    fn json_object_object_get_ex(
-        obj: *const json_object,
-        key: *const libc::c_char,
-        value: *mut *mut json_object,
-    ) -> json_bool;
-    fn json_object_get_boolean(obj: *const json_object) -> json_bool;
-    fn json_object_get_int(obj: *const json_object) -> int32_t;
-    fn json_object_get_int64(obj: *const json_object) -> int64_t;
-    fn json_object_get_uint64(obj: *const json_object) -> uint64_t;
-    fn json_object_get_double(obj: *const json_object) -> libc::c_double;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
-    fn json_type_to_name(o_type: json_type) -> *const libc::c_char;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type __int32_t = libc::c_int;
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type int32_t = __int32_t;
-pub type int64_t = __int64_t;
-pub type uint64_t = __uint64_t;
-pub type json_bool = libc::c_int;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_get_boolean;
+pub use crate::json_object::json_object_get_double;
+pub use crate::json_object::json_object_get_int;
+pub use crate::json_object::json_object_get_int64;
+pub use crate::json_object::json_object_get_type;
+pub use crate::json_object::json_object_get_uint64;
+pub use crate::json_object::json_object_is_type;
+pub use crate::json_object::json_object_object_get_ex;
+pub use crate::json_object::json_object_put;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::json_util::json_type_to_name;
+pub use crate::json_object::__int32_t;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::json_object::int32_t;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint64_t;
+pub use crate::json_object::json_bool;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;

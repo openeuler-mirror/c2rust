@@ -3,7 +3,7 @@ extern "C" {
     pub type _IO_wide_data;
     pub type _IO_codecvt;
     pub type _IO_marker;
-    pub type json_object;
+    
     fn __assert_fail(
         __assertion: *const libc::c_char,
         __file: *const libc::c_char,
@@ -19,81 +19,63 @@ extern "C" {
         _: *const libc::c_char,
         _: libc::c_ulong,
     ) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_new_boolean(b: json_bool) -> *mut json_object;
-    fn json_object_get_boolean(obj: *const json_object) -> json_bool;
-    fn json_object_set_boolean(
-        obj: *mut json_object,
-        new_value: json_bool,
-    ) -> libc::c_int;
-    fn json_object_new_int(i: int32_t) -> *mut json_object;
-    fn json_object_new_uint64(i: uint64_t) -> *mut json_object;
-    fn json_object_get_int(obj: *const json_object) -> int32_t;
-    fn json_object_set_int(obj: *mut json_object, new_value: libc::c_int) -> libc::c_int;
-    fn json_object_get_int64(obj: *const json_object) -> int64_t;
-    fn json_object_get_uint64(obj: *const json_object) -> uint64_t;
-    fn json_object_set_int64(obj: *mut json_object, new_value: int64_t) -> libc::c_int;
-    fn json_object_set_uint64(obj: *mut json_object, new_value: uint64_t) -> libc::c_int;
-    fn json_object_new_double(d: libc::c_double) -> *mut json_object;
-    fn json_object_get_double(obj: *const json_object) -> libc::c_double;
-    fn json_object_set_double(
-        obj: *mut json_object,
-        new_value: libc::c_double,
-    ) -> libc::c_int;
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
-    fn json_object_get_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_set_string(
-        obj: *mut json_object,
-        new_value: *const libc::c_char,
-    ) -> libc::c_int;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type size_t = libc::c_ulong;
-pub type __int32_t = libc::c_int;
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type __off_t = libc::c_long;
-pub type __off64_t = libc::c_long;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _IO_FILE {
-    pub _flags: libc::c_int,
-    pub _IO_read_ptr: *mut libc::c_char,
-    pub _IO_read_end: *mut libc::c_char,
-    pub _IO_read_base: *mut libc::c_char,
-    pub _IO_write_base: *mut libc::c_char,
-    pub _IO_write_ptr: *mut libc::c_char,
-    pub _IO_write_end: *mut libc::c_char,
-    pub _IO_buf_base: *mut libc::c_char,
-    pub _IO_buf_end: *mut libc::c_char,
-    pub _IO_save_base: *mut libc::c_char,
-    pub _IO_backup_base: *mut libc::c_char,
-    pub _IO_save_end: *mut libc::c_char,
-    pub _markers: *mut _IO_marker,
-    pub _chain: *mut _IO_FILE,
-    pub _fileno: libc::c_int,
-    pub _flags2: libc::c_int,
-    pub _old_offset: __off_t,
-    pub _cur_column: libc::c_ushort,
-    pub _vtable_offset: libc::c_schar,
-    pub _shortbuf: [libc::c_char; 1],
-    pub _lock: *mut libc::c_void,
-    pub _offset: __off64_t,
-    pub _codecvt: *mut _IO_codecvt,
-    pub _wide_data: *mut _IO_wide_data,
-    pub _freeres_list: *mut _IO_FILE,
-    pub _freeres_buf: *mut libc::c_void,
-    pub __pad5: size_t,
-    pub _mode: libc::c_int,
-    pub _unused2: [libc::c_char; 20],
-}
-pub type _IO_lock_t = ();
-pub type FILE = _IO_FILE;
-pub type int32_t = __int32_t;
-pub type int64_t = __int64_t;
-pub type uint64_t = __uint64_t;
-pub type json_bool = libc::c_int;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_get_boolean;
+pub use crate::json_object::json_object_get_double;
+pub use crate::json_object::json_object_get_int;
+pub use crate::json_object::json_object_get_int64;
+pub use crate::json_object::json_object_get_string;
+pub use crate::json_object::json_object_get_uint64;
+pub use crate::json_object::json_object_new_boolean;
+pub use crate::json_object::json_object_new_double;
+pub use crate::json_object::json_object_new_int;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_new_uint64;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_set_boolean;
+pub use crate::json_object::json_object_set_double;
+pub use crate::json_object::json_object_set_int;
+pub use crate::json_object::json_object_set_int64;
+pub use crate::json_object::json_object_set_string;
+pub use crate::json_object::json_object_set_uint64;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::apps::json_parse::size_t;
+pub use crate::json_object::__int32_t;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::apps::json_parse::__off_t;
+pub use crate::apps::json_parse::__off64_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::_IO_FILE;
+pub use crate::apps::json_parse::_IO_lock_t;
+pub use crate::apps::json_parse::FILE;
+pub use crate::json_object::int32_t;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint64_t;
+pub use crate::json_object::json_bool;
 unsafe fn main_0(
     mut argc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

@@ -1,47 +1,23 @@
 use ::libc;
 extern "C" {
-    fn json_object_get_object(obj: *const json_object) -> *mut lh_table;
+    
 }
-pub type __uint32_t = libc::c_uint;
-pub type uint32_t = __uint32_t;
-pub type uintptr_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_entry {
-    pub k: *const libc::c_void,
-    pub k_is_constant: libc::c_int,
-    pub v: *const libc::c_void,
-    pub next: *mut lh_entry,
-    pub prev: *mut lh_entry,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_object {
-    pub o_type: json_type,
-    pub _ref_count: uint32_t,
-    pub _to_json_string: Option::<json_object_to_json_string_fn>,
-    pub _pb: *mut printbuf,
-    pub _user_delete: Option::<json_object_delete_fn>,
-    pub _userdata: *mut libc::c_void,
-}
-pub type json_object_delete_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut libc::c_void,
-) -> ();
-pub type json_object_to_json_string_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut printbuf,
-    libc::c_int,
-    libc::c_int,
-) -> libc::c_int;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object_get_object;
+pub use crate::json_object::__uint32_t;
+pub use crate::json_object::uint32_t;
+pub use crate::json_object::uintptr_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_entry;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_delete_fn;
+pub use crate::json_object::json_object_to_json_string_fn;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;
@@ -49,25 +25,13 @@ pub const json_type_int: json_type = 3;
 pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
-pub type json_bool = libc::c_int;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_table {
-    pub size: libc::c_int,
-    pub count: libc::c_int,
-    pub head: *mut lh_entry,
-    pub tail: *mut lh_entry,
-    pub table: *mut lh_entry,
-    pub free_fn: Option::<lh_entry_free_fn>,
-    pub hash_fn: Option::<lh_hash_fn>,
-    pub equal_fn: Option::<lh_equal_fn>,
-}
-pub type lh_equal_fn = unsafe extern "C" fn(
-    *const libc::c_void,
-    *const libc::c_void,
-) -> libc::c_int;
-pub type lh_hash_fn = unsafe extern "C" fn(*const libc::c_void) -> libc::c_ulong;
-pub type lh_entry_free_fn = unsafe extern "C" fn(*mut lh_entry) -> ();
+pub use crate::json_object::json_bool;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_table;
+pub use crate::json_object::lh_equal_fn;
+pub use crate::json_object::lh_hash_fn;
+pub use crate::json_object::lh_entry_free_fn;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct json_object_iterator {
@@ -133,7 +97,7 @@ pub unsafe extern "C" fn json_object_iter_equal(
     return ((*iter1).opaque_ == (*iter2).opaque_) as libc::c_int;
 }
 #[no_mangle]
-pub unsafe extern "C" fn json_object_iter_init_default() -> json_object_iterator {
+pub extern "C" fn json_object_iter_init_default() -> json_object_iterator {
     let mut iter: json_object_iterator = json_object_iterator {
         opaque_: 0 as *const libc::c_void,
     };

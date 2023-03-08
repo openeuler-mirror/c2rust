@@ -3,66 +3,32 @@ extern "C" {
     pub type _IO_wide_data;
     pub type _IO_codecvt;
     pub type _IO_marker;
-    pub type json_object;
+    
     static mut stderr: *mut FILE;
     fn fprintf(_: *mut FILE, _: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_get_type(obj: *const json_object) -> json_type;
-    fn json_object_get_object(obj: *const json_object) -> *mut lh_table;
-    fn json_object_array_length(obj: *const json_object) -> size_t;
-    fn json_object_array_get_idx(
-        obj: *const json_object,
-        idx: size_t,
-    ) -> *mut json_object;
+    
+    
+    
+    
 }
-pub type size_t = libc::c_ulong;
-pub type __off_t = libc::c_long;
-pub type __off64_t = libc::c_long;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _IO_FILE {
-    pub _flags: libc::c_int,
-    pub _IO_read_ptr: *mut libc::c_char,
-    pub _IO_read_end: *mut libc::c_char,
-    pub _IO_read_base: *mut libc::c_char,
-    pub _IO_write_base: *mut libc::c_char,
-    pub _IO_write_ptr: *mut libc::c_char,
-    pub _IO_write_end: *mut libc::c_char,
-    pub _IO_buf_base: *mut libc::c_char,
-    pub _IO_buf_end: *mut libc::c_char,
-    pub _IO_save_base: *mut libc::c_char,
-    pub _IO_backup_base: *mut libc::c_char,
-    pub _IO_save_end: *mut libc::c_char,
-    pub _markers: *mut _IO_marker,
-    pub _chain: *mut _IO_FILE,
-    pub _fileno: libc::c_int,
-    pub _flags2: libc::c_int,
-    pub _old_offset: __off_t,
-    pub _cur_column: libc::c_ushort,
-    pub _vtable_offset: libc::c_schar,
-    pub _shortbuf: [libc::c_char; 1],
-    pub _lock: *mut libc::c_void,
-    pub _offset: __off64_t,
-    pub _codecvt: *mut _IO_codecvt,
-    pub _wide_data: *mut _IO_wide_data,
-    pub _freeres_list: *mut _IO_FILE,
-    pub _freeres_buf: *mut libc::c_void,
-    pub __pad5: size_t,
-    pub _mode: libc::c_int,
-    pub _unused2: [libc::c_char; 20],
-}
-pub type _IO_lock_t = ();
-pub type FILE = _IO_FILE;
-pub type uintptr_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_entry {
-    pub k: *const libc::c_void,
-    pub k_is_constant: libc::c_int,
-    pub v: *const libc::c_void,
-    pub next: *mut lh_entry,
-    pub prev: *mut lh_entry,
-}
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_array_get_idx;
+pub use crate::json_object::json_object_array_length;
+pub use crate::json_object::json_object_get_object;
+pub use crate::json_object::json_object_get_type;
+pub use crate::apps::json_parse::size_t;
+pub use crate::apps::json_parse::__off_t;
+pub use crate::apps::json_parse::__off64_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::_IO_FILE;
+pub use crate::apps::json_parse::_IO_lock_t;
+pub use crate::apps::json_parse::FILE;
+pub use crate::json_object::uintptr_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_entry;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;
@@ -70,24 +36,12 @@ pub const json_type_int: json_type = 3;
 pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_table {
-    pub size: libc::c_int,
-    pub count: libc::c_int,
-    pub head: *mut lh_entry,
-    pub tail: *mut lh_entry,
-    pub table: *mut lh_entry,
-    pub free_fn: Option::<lh_entry_free_fn>,
-    pub hash_fn: Option::<lh_hash_fn>,
-    pub equal_fn: Option::<lh_equal_fn>,
-}
-pub type lh_equal_fn = unsafe extern "C" fn(
-    *const libc::c_void,
-    *const libc::c_void,
-) -> libc::c_int;
-pub type lh_hash_fn = unsafe extern "C" fn(*const libc::c_void) -> libc::c_ulong;
-pub type lh_entry_free_fn = unsafe extern "C" fn(*mut lh_entry) -> ();
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_table;
+pub use crate::json_object::lh_equal_fn;
+pub use crate::json_object::lh_hash_fn;
+pub use crate::json_object::lh_entry_free_fn;
 pub type json_c_visit_userfunc = unsafe extern "C" fn(
     *mut json_object,
     libc::c_int,

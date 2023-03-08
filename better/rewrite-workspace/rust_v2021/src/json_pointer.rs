@@ -1,32 +1,14 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_is_type(obj: *const json_object, type_0: json_type) -> libc::c_int;
-    fn json_object_object_add(
-        obj: *mut json_object,
-        key: *const libc::c_char,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_object_get_ex(
-        obj: *const json_object,
-        key: *const libc::c_char,
-        value: *mut *mut json_object,
-    ) -> json_bool;
-    fn json_object_array_length(obj: *const json_object) -> size_t;
-    fn json_object_array_add(
-        obj: *mut json_object,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_array_put_idx(
-        obj: *mut json_object,
-        idx: size_t,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_array_get_idx(
-        obj: *const json_object,
-        idx: size_t,
-    ) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn memmove(
         _: *mut libc::c_void,
         _: *const libc::c_void,
@@ -50,17 +32,21 @@ extern "C" {
     ) -> libc::c_long;
     fn free(__ptr: *mut libc::c_void);
 }
-pub type __builtin_va_list = [__va_list_tag; 1];
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct __va_list_tag {
-    pub gp_offset: libc::c_uint,
-    pub fp_offset: libc::c_uint,
-    pub overflow_arg_area: *mut libc::c_void,
-    pub reg_save_area: *mut libc::c_void,
-}
-pub type json_bool = libc::c_int;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_array_add;
+pub use crate::json_object::json_object_array_get_idx;
+pub use crate::json_object::json_object_array_length;
+pub use crate::json_object::json_object_array_put_idx;
+pub use crate::json_object::json_object_is_type;
+pub use crate::json_object::json_object_object_add;
+pub use crate::json_object::json_object_object_get_ex;
+pub use crate::json_object::json_object_put;
+pub use crate::debug::__builtin_va_list;
+// #[derive(Copy, Clone)]
+
+pub use crate::debug::__va_list_tag;
+pub use crate::json_object::json_bool;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;
@@ -68,8 +54,8 @@ pub const json_type_int: json_type = 3;
 pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
-pub type size_t = libc::c_ulong;
-pub type va_list = __builtin_va_list;
+pub use crate::apps::json_parse::size_t;
+pub use crate::debug::va_list;
 unsafe extern "C" fn string_replace_all_occurrences_with_char(
     mut s: *mut libc::c_char,
     mut occur: *const libc::c_char,

@@ -11,7 +11,7 @@ autobins = false
 
 [lib]
 name = "rust_v2021"
-path = "lib.rs"
+path = "src/lib.rs"
 crate-type = ["staticlib", "rlib"]
 [dependencies]
 libc= "0.2"

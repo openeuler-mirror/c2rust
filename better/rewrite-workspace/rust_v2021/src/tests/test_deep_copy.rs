@@ -1,6 +1,6 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
     fn __assert_fail(
@@ -11,74 +11,47 @@ extern "C" {
     ) -> !;
     fn __errno_location() -> *mut libc::c_int;
     fn time(__timer: *mut time_t) -> time_t;
-    fn sprintbuf(p: *mut printbuf, msg: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_get(obj: *mut json_object) -> *mut json_object;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_to_json_string_ext(
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> *const libc::c_char;
-    fn json_object_get_userdata(jso: *mut json_object) -> *mut libc::c_void;
-    fn json_object_set_serializer(
-        jso: *mut json_object,
-        to_string_func: Option::<json_object_to_json_string_fn>,
-        userdata: *mut libc::c_void,
-        user_delete: Option::<json_object_delete_fn>,
-    );
-    fn json_object_object_add(
-        obj: *mut json_object,
-        key: *const libc::c_char,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_object_get(
-        obj: *const json_object,
-        key: *const libc::c_char,
-    ) -> *mut json_object;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
-    fn json_object_get_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
-    fn json_object_equal(obj1: *mut json_object, obj2: *mut json_object) -> libc::c_int;
-    fn json_c_shallow_copy_default(
-        _: *mut json_object,
-        _: *mut json_object,
-        _: *const libc::c_char,
-        _: size_t,
-        _: *mut *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_deep_copy(
-        src: *mut json_object,
-        dst: *mut *mut json_object,
-        shallow_copy: Option::<json_c_shallow_copy_fn>,
-    ) -> libc::c_int;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type size_t = libc::c_ulong;
-pub type __time_t = libc::c_long;
-pub type time_t = __time_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
-pub type json_object_delete_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut libc::c_void,
-) -> ();
-pub type json_object_to_json_string_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut printbuf,
-    libc::c_int,
-    libc::c_int,
-) -> libc::c_int;
-pub type json_c_shallow_copy_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut json_object,
-    *const libc::c_char,
-    size_t,
-    *mut *mut json_object,
-) -> libc::c_int;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_c_shallow_copy_default;
+pub use crate::json_object::json_object_deep_copy;
+pub use crate::json_object::json_object_equal;
+pub use crate::json_object::json_object_get;
+pub use crate::json_object::json_object_get_string;
+pub use crate::json_object::json_object_get_userdata;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_object_add;
+pub use crate::json_object::json_object_object_get;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_set_serializer;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_object::json_object_to_json_string_ext;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::printbuf::sprintbuf;
+pub use crate::apps::json_parse::size_t;
+pub use crate::apps::json_parse::__time_t;
+pub use crate::random_seed::time_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
+pub use crate::json_object::json_object_delete_fn;
+pub use crate::json_object::json_object_to_json_string_fn;
+pub use crate::json_object::json_c_shallow_copy_fn;
 static mut json_str1: *const libc::c_char = b"{    \"glossary\": {        \"title\": \"example glossary\",        \"GlossDiv\": {            \"number\": 16446744073709551615,            \"title\": \"S\",            \"null_obj\": null,             \"exist\": false,            \"quantity\":20,            \"univalent\":19.8,            \"GlossList\": {                \"GlossEntry\": {                    \"ID\": \"SGML\",                    \"SortAs\": \"SGML\",                    \"GlossTerm\": \"Standard Generalized Markup Language\",                    \"Acronym\": \"SGML\",                    \"Abbrev\": \"ISO 8879:1986\",                    \"GlossDef\": {                        \"para\": \"A meta-markup language, used to create markup languages such as DocBook.\",                        \"GlossSeeAlso\": [\"GML\", \"XML\"]                    },                    \"GlossSee\": \"markup\"                }            }        }    }}\0"
     as *const u8 as *const libc::c_char;
 static mut json_str2: *const libc::c_char = b"{\"menu\": {    \"header\": \"SVG Viewer\",    \"items\": [        {\"id\": \"Open\"},        {\"id\": \"OpenNew\", \"label\": \"Open New\"},        null,        {\"id\": \"ZoomIn\", \"label\": \"Zoom In\"},        {\"id\": \"ZoomOut\", \"label\": \"Zoom Out\"},        {\"id\": \"OriginalView\", \"label\": \"Original View\"},        null,        {\"id\": \"Quality\", \"another_null\": null},        {\"id\": \"Pause\"},        {\"id\": \"Mute\"},        null,        {\"id\": \"Find\", \"label\": \"Find...\"},        {\"id\": \"FindAgain\", \"label\": \"Find Again\"},        {\"id\": \"Copy\"},        {\"id\": \"CopyAgain\", \"label\": \"Copy Again\"},        {\"id\": \"CopySVG\", \"label\": \"Copy SVG\"},        {\"id\": \"ViewSVG\", \"label\": \"View SVG\"},        {\"id\": \"ViewSource\", \"label\": \"View Source\"},        {\"id\": \"SaveAs\", \"label\": \"Save As\"},        null,        {\"id\": \"Help\"},        {\"id\": \"About\", \"label\": \"About Adobe CVG Viewer...\"}    ]}}\0"

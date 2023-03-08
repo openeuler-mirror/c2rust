@@ -1,6 +1,6 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
     fn snprintf(
         _: *mut libc::c_char,
@@ -9,25 +9,27 @@ extern "C" {
         _: ...
     ) -> libc::c_int;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string_ext(
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> *const libc::c_char;
-    fn json_object_array_length(obj: *const json_object) -> size_t;
-    fn json_object_array_get_idx(
-        obj: *const json_object,
-        idx: size_t,
-    ) -> *mut json_object;
-    fn json_object_get_double(obj: *const json_object) -> libc::c_double;
-    fn mc_set_debug(debug: libc::c_int);
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
+    
+    
+    
+    
+    
+    
+    
     fn setlocale(
         __category: libc::c_int,
         __locale: *const libc::c_char,
     ) -> *mut libc::c_char;
 }
-pub type size_t = libc::c_ulong;
+pub use crate::json_object::json_object;
+pub use crate::debug::mc_set_debug;
+pub use crate::json_object::json_object_array_get_idx;
+pub use crate::json_object::json_object_array_length;
+pub use crate::json_object::json_object_get_double;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_to_json_string_ext;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::apps::json_parse::size_t;
 unsafe fn main_0(
     mut argc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

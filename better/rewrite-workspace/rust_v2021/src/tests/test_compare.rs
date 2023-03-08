@@ -1,29 +1,33 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_new_object() -> *mut json_object;
-    fn json_object_object_add(
-        obj: *mut json_object,
-        key: *const libc::c_char,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_new_array() -> *mut json_object;
-    fn json_object_array_add(
-        obj: *mut json_object,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_new_int(i: int32_t) -> *mut json_object;
-    fn json_object_new_uint64(i: uint64_t) -> *mut json_object;
-    fn json_object_new_double(d: libc::c_double) -> *mut json_object;
-    fn json_object_new_string(s: *const libc::c_char) -> *mut json_object;
-    fn json_object_equal(obj1: *mut json_object, obj2: *mut json_object) -> libc::c_int;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type __int32_t = libc::c_int;
-pub type __uint64_t = libc::c_ulong;
-pub type int32_t = __int32_t;
-pub type uint64_t = __uint64_t;
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_array_add;
+pub use crate::json_object::json_object_equal;
+pub use crate::json_object::json_object_new_array;
+pub use crate::json_object::json_object_new_double;
+pub use crate::json_object::json_object_new_int;
+pub use crate::json_object::json_object_new_object;
+pub use crate::json_object::json_object_new_string;
+pub use crate::json_object::json_object_new_uint64;
+pub use crate::json_object::json_object_object_add;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::__int32_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::json_object::int32_t;
+pub use crate::json_object::uint64_t;
 unsafe fn main_0(
     mut argc: libc::c_int,
     mut argv: *mut *mut libc::c_char,

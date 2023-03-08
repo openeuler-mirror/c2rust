@@ -29,46 +29,26 @@ extern "C" {
         _: *const libc::c_char,
         _: libc::c_ulong,
     ) -> libc::c_int;
-    fn mc_debug(msg: *const libc::c_char, _: ...);
-    fn printbuf_memappend(
-        p: *mut printbuf,
-        buf: *const libc::c_char,
-        size: libc::c_int,
-    ) -> libc::c_int;
-    fn printbuf_reset(p: *mut printbuf);
-    fn printbuf_free(p: *mut printbuf);
-    fn json_object_get(obj: *mut json_object) -> *mut json_object;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_new_object() -> *mut json_object;
-    fn json_object_object_add(
-        obj: *mut json_object,
-        key: *const libc::c_char,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_new_array() -> *mut json_object;
-    fn json_object_array_add(
-        obj: *mut json_object,
-        val: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_array_shrink(
-        jso: *mut json_object,
-        empty_slots: libc::c_int,
-    ) -> libc::c_int;
-    fn json_object_new_boolean(b: json_bool) -> *mut json_object;
-    fn json_object_new_int64(i: int64_t) -> *mut json_object;
-    fn json_object_new_uint64(i: uint64_t) -> *mut json_object;
-    fn printbuf_new() -> *mut printbuf;
-    fn json_object_new_double(d: libc::c_double) -> *mut json_object;
-    fn json_object_new_double_s(
-        d: libc::c_double,
-        ds: *const libc::c_char,
-    ) -> *mut json_object;
-    fn json_object_new_string_len(
-        s: *const libc::c_char,
-        len: libc::c_int,
-    ) -> *mut json_object;
-    fn json_parse_int64(buf: *const libc::c_char, retval: *mut int64_t) -> libc::c_int;
-    fn json_parse_uint64(buf: *const libc::c_char, retval: *mut uint64_t) -> libc::c_int;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn newlocale(
         __category_mask: libc::c_int,
         __locale: *const libc::c_char,
@@ -78,10 +58,30 @@ extern "C" {
     fn duplocale(__dataset: locale_t) -> locale_t;
     fn uselocale(__dataset: locale_t) -> locale_t;
 }
-pub type __uint32_t = libc::c_uint;
-pub type __int64_t = libc::c_long;
-pub type __uint64_t = libc::c_ulong;
-pub type size_t = libc::c_ulong;
+pub use crate::debug::mc_debug;
+pub use crate::json_object::json_object_array_add;
+pub use crate::json_object::json_object_array_shrink;
+pub use crate::json_object::json_object_get;
+pub use crate::json_object::json_object_new_array;
+pub use crate::json_object::json_object_new_boolean;
+pub use crate::json_object::json_object_new_double;
+pub use crate::json_object::json_object_new_double_s;
+pub use crate::json_object::json_object_new_int64;
+pub use crate::json_object::json_object_new_object;
+pub use crate::json_object::json_object_new_string_len;
+pub use crate::json_object::json_object_new_uint64;
+pub use crate::json_object::json_object_object_add;
+pub use crate::json_object::json_object_put;
+pub use crate::json_util::json_parse_int64;
+pub use crate::json_util::json_parse_uint64;
+pub use crate::printbuf::printbuf_free;
+pub use crate::printbuf::printbuf_memappend;
+pub use crate::printbuf::printbuf_new;
+pub use crate::printbuf::printbuf_reset;
+pub use crate::json_object::__uint32_t;
+pub use crate::json_object::__int64_t;
+pub use crate::json_object::__uint64_t;
+pub use crate::apps::json_parse::size_t;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct __locale_struct {
@@ -93,37 +93,18 @@ pub struct __locale_struct {
 }
 pub type __locale_t = *mut __locale_struct;
 pub type locale_t = __locale_t;
-pub type int64_t = __int64_t;
-pub type uint32_t = __uint32_t;
-pub type uint64_t = __uint64_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_object {
-    pub o_type: json_type,
-    pub _ref_count: uint32_t,
-    pub _to_json_string: Option::<json_object_to_json_string_fn>,
-    pub _pb: *mut printbuf,
-    pub _user_delete: Option::<json_object_delete_fn>,
-    pub _userdata: *mut libc::c_void,
-}
-pub type json_object_delete_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut libc::c_void,
-) -> ();
-pub type json_object_to_json_string_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut printbuf,
-    libc::c_int,
-    libc::c_int,
-) -> libc::c_int;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::int64_t;
+pub use crate::json_object::uint32_t;
+pub use crate::json_object::uint64_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_delete_fn;
+pub use crate::json_object::json_object_to_json_string_fn;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;
@@ -131,8 +112,8 @@ pub const json_type_int: json_type = 3;
 pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
-pub type json_bool = libc::c_int;
-pub type json_tokener_error = libc::c_uint;
+pub use crate::json_object::json_bool;
+pub use crate::apps::json_parse::json_tokener_error;
 pub const json_tokener_error_size: json_tokener_error = 15;
 pub const json_tokener_error_parse_utf8_string: json_tokener_error = 14;
 pub const json_tokener_error_parse_comment: json_tokener_error = 13;
@@ -149,7 +130,7 @@ pub const json_tokener_error_parse_eof: json_tokener_error = 3;
 pub const json_tokener_error_depth: json_tokener_error = 2;
 pub const json_tokener_continue: json_tokener_error = 1;
 pub const json_tokener_success: json_tokener_error = 0;
-pub type json_tokener_state = libc::c_uint;
+pub use crate::apps::json_parse::json_tokener_state;
 pub const json_tokener_state_inf: json_tokener_state = 26;
 pub const json_tokener_state_object_field_start_after_sep: json_tokener_state = 25;
 pub const json_tokener_state_array_after_sep: json_tokener_state = 24;
@@ -177,40 +158,20 @@ pub const json_tokener_state_null: json_tokener_state = 3;
 pub const json_tokener_state_finish: json_tokener_state = 2;
 pub const json_tokener_state_start: json_tokener_state = 1;
 pub const json_tokener_state_eatws: json_tokener_state = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_tokener_srec {
-    pub state: json_tokener_state,
-    pub saved_state: json_tokener_state,
-    pub obj: *mut json_object,
-    pub current: *mut json_object,
-    pub obj_field_name: *mut libc::c_char,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_tokener {
-    pub str_0: *mut libc::c_char,
-    pub pb: *mut printbuf,
-    pub max_depth: libc::c_int,
-    pub depth: libc::c_int,
-    pub is_double: libc::c_int,
-    pub st_pos: libc::c_int,
-    pub char_offset: libc::c_int,
-    pub err: json_tokener_error,
-    pub ucs_char: libc::c_uint,
-    pub high_surrogate: libc::c_uint,
-    pub quote_char: libc::c_char,
-    pub stack: *mut json_tokener_srec,
-    pub flags: libc::c_int,
-}
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::json_tokener_srec;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::json_tokener;
 #[inline]
-unsafe extern "C" fn is_ws_char(mut c: libc::c_char) -> libc::c_int {
+ extern "C" fn is_ws_char(mut c: libc::c_char) -> libc::c_int {
     return (c as libc::c_int == ' ' as i32 || c as libc::c_int == '\t' as i32
         || c as libc::c_int == '\n' as i32 || c as libc::c_int == '\r' as i32)
         as libc::c_int;
 }
 #[inline]
-unsafe extern "C" fn is_hex_char(mut c: libc::c_char) -> libc::c_int {
+ extern "C" fn is_hex_char(mut c: libc::c_char) -> libc::c_int {
     return (c as libc::c_int >= '0' as i32 && c as libc::c_int <= '9' as i32
         || c as libc::c_int >= 'A' as i32 && c as libc::c_int <= 'F' as i32
         || c as libc::c_int >= 'a' as i32 && c as libc::c_int <= 'f' as i32)

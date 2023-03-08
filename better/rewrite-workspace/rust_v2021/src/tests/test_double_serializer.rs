@@ -1,60 +1,32 @@
 use ::libc;
 extern "C" {
     fn printf(_: *const libc::c_char, _: ...) -> libc::c_int;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
-    fn json_object_to_json_string_ext(
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> *const libc::c_char;
-    fn json_object_set_serializer(
-        jso: *mut json_object,
-        to_string_func: Option::<json_object_to_json_string_fn>,
-        userdata: *mut libc::c_void,
-        user_delete: Option::<json_object_delete_fn>,
-    );
-    fn json_object_new_double(d: libc::c_double) -> *mut json_object;
-    fn json_c_set_serialization_double_format(
-        double_format: *const libc::c_char,
-        global_or_thread: libc::c_int,
-    ) -> libc::c_int;
-    fn json_object_double_to_json_string(
-        jso: *mut json_object,
-        pb: *mut printbuf,
-        level: libc::c_int,
-        flags: libc::c_int,
-    ) -> libc::c_int;
+    
+    
+    
+    
+    
+    
+    
 }
-pub type __uint32_t = libc::c_uint;
-pub type uint32_t = __uint32_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct json_object {
-    pub o_type: json_type,
-    pub _ref_count: uint32_t,
-    pub _to_json_string: Option::<json_object_to_json_string_fn>,
-    pub _pb: *mut printbuf,
-    pub _user_delete: Option::<json_object_delete_fn>,
-    pub _userdata: *mut libc::c_void,
-}
-pub type json_object_delete_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut libc::c_void,
-) -> ();
-pub type json_object_to_json_string_fn = unsafe extern "C" fn(
-    *mut json_object,
-    *mut printbuf,
-    libc::c_int,
-    libc::c_int,
-) -> libc::c_int;
-pub type json_type = libc::c_uint;
+pub use crate::json_object::json_c_set_serialization_double_format;
+pub use crate::json_object::json_object_double_to_json_string;
+pub use crate::json_object::json_object_new_double;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_set_serializer;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_object::json_object_to_json_string_ext;
+pub use crate::json_object::__uint32_t;
+pub use crate::json_object::uint32_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::json_object;
+pub use crate::json_object::json_object_delete_fn;
+pub use crate::json_object::json_object_to_json_string_fn;
+pub use crate::json_object::json_type;
 pub const json_type_string: json_type = 6;
 pub const json_type_array: json_type = 5;
 pub const json_type_object: json_type = 4;

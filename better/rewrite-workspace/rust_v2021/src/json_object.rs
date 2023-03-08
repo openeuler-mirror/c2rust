@@ -8,20 +8,11 @@ extern "C" {
         _: *const libc::c_void,
         _: libc::c_ulong,
     ) -> *mut libc::c_void;
-    fn printbuf_new() -> *mut printbuf;
-    fn printbuf_memappend(
-        p: *mut printbuf,
-        buf: *const libc::c_char,
-        size: libc::c_int,
-    ) -> libc::c_int;
-    fn printbuf_memset(
-        pb: *mut printbuf,
-        offset: libc::c_int,
-        charvalue: libc::c_int,
-        len: libc::c_int,
-    ) -> libc::c_int;
-    fn printbuf_reset(p: *mut printbuf);
-    fn printbuf_free(p: *mut printbuf);
+    
+    
+    
+    
+    
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn strcat(_: *mut libc::c_char, _: *const libc::c_char) -> *mut libc::c_char;
     fn strchr(_: *const libc::c_char, _: libc::c_int) -> *mut libc::c_char;
@@ -51,85 +42,67 @@ extern "C" {
     fn strtod(_: *const libc::c_char, _: *mut *mut libc::c_char) -> libc::c_double;
     fn abort() -> !;
     fn malloc(_: libc::c_ulong) -> *mut libc::c_void;
-    fn array_list_new2(
-        free_fn: Option::<array_list_free_fn>,
-        initial_size: libc::c_int,
-    ) -> *mut array_list;
-    fn array_list_free(al: *mut array_list);
-    fn array_list_get_idx(al: *mut array_list, i: size_t) -> *mut libc::c_void;
-    fn array_list_put_idx(
-        al: *mut array_list,
-        i: size_t,
-        data: *mut libc::c_void,
-    ) -> libc::c_int;
-    fn array_list_add(al: *mut array_list, data: *mut libc::c_void) -> libc::c_int;
-    fn array_list_length(al: *mut array_list) -> size_t;
-    fn array_list_sort(
-        arr: *mut array_list,
-        compar: Option::<
-            unsafe extern "C" fn(*const libc::c_void, *const libc::c_void) -> libc::c_int,
-        >,
-    );
-    fn array_list_bsearch(
-        key: *mut *const libc::c_void,
-        arr: *mut array_list,
-        compar: Option::<
-            unsafe extern "C" fn(*const libc::c_void, *const libc::c_void) -> libc::c_int,
-        >,
-    ) -> *mut libc::c_void;
-    fn array_list_del_idx(
-        arr: *mut array_list,
-        idx: size_t,
-        count: size_t,
-    ) -> libc::c_int;
-    fn array_list_shrink(arr: *mut array_list, empty_slots: size_t) -> libc::c_int;
-    fn _json_c_set_last_err(err_fmt: *const libc::c_char, _: ...);
-    fn json_parse_int64(buf: *const libc::c_char, retval: *mut int64_t) -> libc::c_int;
-    fn json_parse_uint64(buf: *const libc::c_char, retval: *mut uint64_t) -> libc::c_int;
-    fn lh_kchar_table_new(
-        size: libc::c_int,
-        free_fn: Option::<lh_entry_free_fn>,
-    ) -> *mut lh_table;
-    fn lh_table_free(t: *mut lh_table);
-    fn lh_table_insert_w_hash(
-        t: *mut lh_table,
-        k: *const libc::c_void,
-        v: *const libc::c_void,
-        h: libc::c_ulong,
-        opts: libc::c_uint,
-    ) -> libc::c_int;
-    fn lh_table_lookup_entry_w_hash(
-        t: *mut lh_table,
-        k: *const libc::c_void,
-        h: libc::c_ulong,
-    ) -> *mut lh_entry;
-    fn lh_table_lookup_ex(
-        t: *mut lh_table,
-        k: *const libc::c_void,
-        v: *mut *mut libc::c_void,
-    ) -> json_bool;
-    fn lh_table_delete(t: *mut lh_table, k: *const libc::c_void) -> libc::c_int;
-    fn lh_table_length(t: *mut lh_table) -> libc::c_int;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
+pub use crate::arraylist::array_list_add;
+pub use crate::arraylist::array_list_bsearch;
+pub use crate::arraylist::array_list_del_idx;
+pub use crate::arraylist::array_list_free;
+pub use crate::arraylist::array_list_get_idx;
+pub use crate::arraylist::array_list_length;
+pub use crate::arraylist::array_list_new2;
+pub use crate::arraylist::array_list_put_idx;
+pub use crate::arraylist::array_list_shrink;
+pub use crate::arraylist::array_list_sort;
+pub use crate::json_util::_json_c_set_last_err;
+pub use crate::json_util::json_parse_int64;
+pub use crate::json_util::json_parse_uint64;
+pub use crate::linkhash::lh_kchar_table_new;
+pub use crate::linkhash::lh_table_delete;
+pub use crate::linkhash::lh_table_free;
+pub use crate::linkhash::lh_table_insert_w_hash;
+pub use crate::linkhash::lh_table_length;
+pub use crate::linkhash::lh_table_lookup_entry_w_hash;
+pub use crate::linkhash::lh_table_lookup_ex;
+pub use crate::printbuf::printbuf_free;
+pub use crate::printbuf::printbuf_memappend;
+pub use crate::printbuf::printbuf_memset;
+pub use crate::printbuf::printbuf_new;
+pub use crate::printbuf::printbuf_reset;
 pub type __int32_t = libc::c_int;
 pub type __uint32_t = libc::c_uint;
 pub type __int64_t = libc::c_long;
 pub type __uint64_t = libc::c_ulong;
-pub type __off_t = libc::c_long;
-pub type __off64_t = libc::c_long;
-pub type __ssize_t = libc::c_long;
+pub use crate::apps::json_parse::__off_t;
+pub use crate::apps::json_parse::__off64_t;
+pub use crate::apps::json_parse::__ssize_t;
 pub type int32_t = __int32_t;
 pub type int64_t = __int64_t;
 pub type uint32_t = __uint32_t;
 pub type uint64_t = __uint64_t;
 pub type uintptr_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct printbuf {
-    pub buf: *mut libc::c_char,
-    pub bpos: libc::c_int,
-    pub size: libc::c_int,
-}
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::printbuf;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct json_object_iter {
@@ -175,7 +148,7 @@ pub const json_type_double: json_type = 2;
 pub const json_type_boolean: json_type = 1;
 pub const json_type_null: json_type = 0;
 pub type json_bool = libc::c_int;
-pub type size_t = libc::c_ulong;
+pub use crate::apps::json_parse::size_t;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2RustUnnamed {
@@ -189,16 +162,11 @@ pub struct json_object_string {
     pub len: ssize_t,
     pub c_string: C2RustUnnamed,
 }
-pub type ssize_t = __ssize_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct array_list {
-    pub array: *mut *mut libc::c_void,
-    pub length: size_t,
-    pub size: size_t,
-    pub free_fn: Option::<array_list_free_fn>,
-}
-pub type array_list_free_fn = unsafe extern "C" fn(*mut libc::c_void) -> ();
+pub use crate::apps::json_parse::ssize_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::arraylist::array_list;
+pub use crate::arraylist::array_list_free_fn;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct json_object_array {
@@ -257,41 +225,11 @@ pub struct json_object_boolean {
     pub base: json_object,
     pub c_boolean: json_bool,
 }
-pub type FILE = _IO_FILE;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _IO_FILE {
-    pub _flags: libc::c_int,
-    pub _IO_read_ptr: *mut libc::c_char,
-    pub _IO_read_end: *mut libc::c_char,
-    pub _IO_read_base: *mut libc::c_char,
-    pub _IO_write_base: *mut libc::c_char,
-    pub _IO_write_ptr: *mut libc::c_char,
-    pub _IO_write_end: *mut libc::c_char,
-    pub _IO_buf_base: *mut libc::c_char,
-    pub _IO_buf_end: *mut libc::c_char,
-    pub _IO_save_base: *mut libc::c_char,
-    pub _IO_backup_base: *mut libc::c_char,
-    pub _IO_save_end: *mut libc::c_char,
-    pub _markers: *mut _IO_marker,
-    pub _chain: *mut _IO_FILE,
-    pub _fileno: libc::c_int,
-    pub _flags2: libc::c_int,
-    pub _old_offset: __off_t,
-    pub _cur_column: libc::c_ushort,
-    pub _vtable_offset: libc::c_schar,
-    pub _shortbuf: [libc::c_char; 1],
-    pub _lock: *mut libc::c_void,
-    pub _offset: __off64_t,
-    pub _codecvt: *mut _IO_codecvt,
-    pub _wide_data: *mut _IO_wide_data,
-    pub _freeres_list: *mut _IO_FILE,
-    pub _freeres_buf: *mut libc::c_void,
-    pub __pad5: size_t,
-    pub _mode: libc::c_int,
-    pub _unused2: [libc::c_char; 20],
-}
-pub type _IO_lock_t = ();
+pub use crate::apps::json_parse::FILE;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::_IO_FILE;
+pub use crate::apps::json_parse::_IO_lock_t;
 pub type json_c_shallow_copy_fn = unsafe extern "C" fn(
     *mut json_object,
     *mut json_object,
@@ -338,59 +276,59 @@ unsafe extern "C" fn lh_entry_next(mut e: *const lh_entry) -> *mut lh_entry {
 pub static mut json_hex_chars: *const libc::c_char = b"0123456789abcdefABCDEF\0"
     as *const u8 as *const libc::c_char;
 #[inline]
-unsafe extern "C" fn JC_OBJECT(mut jso: *mut json_object) -> *mut json_object_object {
+ extern "C" fn JC_OBJECT(mut jso: *mut json_object) -> *mut json_object_object {
     return jso as *mut libc::c_void as *mut json_object_object;
 }
 #[inline]
-unsafe extern "C" fn JC_OBJECT_C(
+ extern "C" fn JC_OBJECT_C(
     mut jso: *const json_object,
 ) -> *const json_object_object {
     return jso as *const libc::c_void as *const json_object_object;
 }
 #[inline]
-unsafe extern "C" fn JC_ARRAY(mut jso: *mut json_object) -> *mut json_object_array {
+ extern "C" fn JC_ARRAY(mut jso: *mut json_object) -> *mut json_object_array {
     return jso as *mut libc::c_void as *mut json_object_array;
 }
 #[inline]
-unsafe extern "C" fn JC_ARRAY_C(
+ extern "C" fn JC_ARRAY_C(
     mut jso: *const json_object,
 ) -> *const json_object_array {
     return jso as *const libc::c_void as *const json_object_array;
 }
 #[inline]
-unsafe extern "C" fn JC_BOOL(mut jso: *mut json_object) -> *mut json_object_boolean {
+ extern "C" fn JC_BOOL(mut jso: *mut json_object) -> *mut json_object_boolean {
     return jso as *mut libc::c_void as *mut json_object_boolean;
 }
 #[inline]
-unsafe extern "C" fn JC_BOOL_C(
+ extern "C" fn JC_BOOL_C(
     mut jso: *const json_object,
 ) -> *const json_object_boolean {
     return jso as *const libc::c_void as *const json_object_boolean;
 }
 #[inline]
-unsafe extern "C" fn JC_DOUBLE(mut jso: *mut json_object) -> *mut json_object_double {
+ extern "C" fn JC_DOUBLE(mut jso: *mut json_object) -> *mut json_object_double {
     return jso as *mut libc::c_void as *mut json_object_double;
 }
 #[inline]
-unsafe extern "C" fn JC_DOUBLE_C(
+ extern "C" fn JC_DOUBLE_C(
     mut jso: *const json_object,
 ) -> *const json_object_double {
     return jso as *const libc::c_void as *const json_object_double;
 }
 #[inline]
-unsafe extern "C" fn JC_INT(mut jso: *mut json_object) -> *mut json_object_int {
+ extern "C" fn JC_INT(mut jso: *mut json_object) -> *mut json_object_int {
     return jso as *mut libc::c_void as *mut json_object_int;
 }
 #[inline]
-unsafe extern "C" fn JC_INT_C(mut jso: *const json_object) -> *const json_object_int {
+ extern "C" fn JC_INT_C(mut jso: *const json_object) -> *const json_object_int {
     return jso as *const libc::c_void as *const json_object_int;
 }
 #[inline]
-unsafe extern "C" fn JC_STRING(mut jso: *mut json_object) -> *mut json_object_string {
+ extern "C" fn JC_STRING(mut jso: *mut json_object) -> *mut json_object_string {
     return jso as *mut libc::c_void as *mut json_object_string;
 }
 #[inline]
-unsafe extern "C" fn JC_STRING_C(
+ extern "C" fn JC_STRING_C(
     mut jso: *const json_object,
 ) -> *const json_object_string {
     return jso as *const libc::c_void as *const json_object_string;
@@ -1080,7 +1018,7 @@ pub unsafe extern "C" fn json_object_object_length(
     return lh_table_length((*JC_OBJECT_C(jso)).c_object);
 }
 #[no_mangle]
-pub unsafe extern "C" fn json_c_object_sizeof() -> size_t {
+pub extern "C" fn json_c_object_sizeof() -> size_t {
     return ::std::mem::size_of::<json_object>() as libc::c_ulong;
 }
 #[no_mangle]
@@ -2438,7 +2376,7 @@ pub unsafe extern "C" fn json_object_array_shrink(
     return array_list_shrink((*JC_ARRAY(jso)).c_array, empty_slots as size_t);
 }
 #[no_mangle]
-pub unsafe extern "C" fn json_object_new_null() -> *mut json_object {
+pub extern "C" fn json_object_new_null() -> *mut json_object {
     return 0 as *mut json_object;
 }
 unsafe extern "C" fn json_object_all_values_equal(

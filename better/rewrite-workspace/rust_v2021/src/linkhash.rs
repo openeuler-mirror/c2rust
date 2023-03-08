@@ -10,45 +10,28 @@ extern "C" {
     fn free(__ptr: *mut libc::c_void);
     fn strlen(_: *const libc::c_char) -> libc::c_ulong;
     fn strcmp(_: *const libc::c_char, _: *const libc::c_char) -> libc::c_int;
-    fn json_c_get_random_seed() -> libc::c_int;
+    
 }
+pub use crate::random_seed::json_c_get_random_seed;
 pub type ptrdiff_t = libc::c_long;
-pub type size_t = libc::c_ulong;
+pub use crate::apps::json_parse::size_t;
 pub type __uint8_t = libc::c_uchar;
 pub type __uint16_t = libc::c_ushort;
-pub type __uint32_t = libc::c_uint;
+pub use crate::json_object::__uint32_t;
 pub type uint8_t = __uint8_t;
 pub type uint16_t = __uint16_t;
-pub type uint32_t = __uint32_t;
-pub type uintptr_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_entry {
-    pub k: *const libc::c_void,
-    pub k_is_constant: libc::c_int,
-    pub v: *const libc::c_void,
-    pub next: *mut lh_entry,
-    pub prev: *mut lh_entry,
-}
-pub type json_bool = libc::c_int;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct lh_table {
-    pub size: libc::c_int,
-    pub count: libc::c_int,
-    pub head: *mut lh_entry,
-    pub tail: *mut lh_entry,
-    pub table: *mut lh_entry,
-    pub free_fn: Option::<lh_entry_free_fn>,
-    pub hash_fn: Option::<lh_hash_fn>,
-    pub equal_fn: Option::<lh_equal_fn>,
-}
-pub type lh_equal_fn = unsafe extern "C" fn(
-    *const libc::c_void,
-    *const libc::c_void,
-) -> libc::c_int;
-pub type lh_hash_fn = unsafe extern "C" fn(*const libc::c_void) -> libc::c_ulong;
-pub type lh_entry_free_fn = unsafe extern "C" fn(*mut lh_entry) -> ();
+pub use crate::json_object::uint32_t;
+pub use crate::json_object::uintptr_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_entry;
+pub use crate::json_object::json_bool;
+// #[derive(Copy, Clone)]
+
+pub use crate::json_object::lh_table;
+pub use crate::json_object::lh_equal_fn;
+pub use crate::json_object::lh_hash_fn;
+pub use crate::json_object::lh_entry_free_fn;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2RustUnnamed {
@@ -88,7 +71,7 @@ pub unsafe extern "C" fn json_global_set_string_hash(h: libc::c_int) -> libc::c_
     }
     return 0 as libc::c_int;
 }
-unsafe extern "C" fn lh_ptr_hash(mut k: *const libc::c_void) -> libc::c_ulong {
+ extern "C" fn lh_ptr_hash(mut k: *const libc::c_void) -> libc::c_ulong {
     return (k as ptrdiff_t as libc::c_ulong).wrapping_mul(0x9e370001 as libc::c_ulong)
         >> 4 as libc::c_int
         & (9223372036854775807 as libc::c_long as libc::c_ulong)
@@ -96,7 +79,7 @@ unsafe extern "C" fn lh_ptr_hash(mut k: *const libc::c_void) -> libc::c_ulong {
             .wrapping_add(1 as libc::c_ulong);
 }
 #[no_mangle]
-pub unsafe extern "C" fn lh_ptr_equal(
+pub extern "C" fn lh_ptr_equal(
     mut k1: *const libc::c_void,
     mut k2: *const libc::c_void,
 ) -> libc::c_int {
@@ -785,7 +768,8 @@ unsafe extern "C" fn lh_char_hash(mut k: *const libc::c_void) -> libc::c_ulong {
                 break;
             }
         }
-        (::std::intrinsics::atomic_cxchg(&mut random_seed, -(1 as libc::c_int), seed)).0;
+        // (::std::intrinsics::atomic_cxchg(&mut random_seed, -(1 as libc::c_int), seed)).0;
+        ::std::intrinsics::atomic_cxchg(&mut random_seed, -(1 as libc::c_int), seed);
     }
     return hashlittle(
         k as *const libc::c_char as *const libc::c_void,

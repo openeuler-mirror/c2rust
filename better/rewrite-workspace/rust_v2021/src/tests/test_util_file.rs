@@ -1,13 +1,13 @@
 use ::libc;
 extern "C" {
-    pub type json_object;
+    
     pub type _IO_wide_data;
     pub type _IO_codecvt;
     pub type _IO_marker;
-    fn json_object_put(obj: *mut json_object) -> libc::c_int;
-    fn json_object_to_json_string(obj: *mut json_object) -> *const libc::c_char;
+    
+    
     fn __errno_location() -> *mut libc::c_int;
-    fn _json_c_strerror(errno_in: libc::c_int) -> *mut libc::c_char;
+    
     fn strncmp(
         _: *const libc::c_char,
         _: *const libc::c_char,
@@ -41,103 +41,57 @@ extern "C" {
         __function: *const libc::c_char,
     ) -> !;
     fn fstat(__fd: libc::c_int, __buf: *mut stat) -> libc::c_int;
-    fn json_c_version() -> *const libc::c_char;
-    fn json_c_version_num() -> libc::c_int;
-    fn json_tokener_parse(str: *const libc::c_char) -> *mut json_object;
-    fn json_object_from_file(filename: *const libc::c_char) -> *mut json_object;
-    fn json_object_from_fd_ex(fd: libc::c_int, depth: libc::c_int) -> *mut json_object;
-    fn json_object_from_fd(fd: libc::c_int) -> *mut json_object;
-    fn json_object_to_file(
-        filename: *const libc::c_char,
-        obj: *mut json_object,
-    ) -> libc::c_int;
-    fn json_object_to_file_ext(
-        filename: *const libc::c_char,
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> libc::c_int;
-    fn json_object_to_fd(
-        fd: libc::c_int,
-        obj: *mut json_object,
-        flags: libc::c_int,
-    ) -> libc::c_int;
-    fn json_util_get_last_err() -> *const libc::c_char;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
-pub type __dev_t = libc::c_ulong;
-pub type __uid_t = libc::c_uint;
-pub type __gid_t = libc::c_uint;
-pub type __ino_t = libc::c_ulong;
-pub type __mode_t = libc::c_uint;
-pub type __nlink_t = libc::c_ulong;
-pub type __off_t = libc::c_long;
-pub type __off64_t = libc::c_long;
-pub type __time_t = libc::c_long;
-pub type __blksize_t = libc::c_long;
-pub type __blkcnt_t = libc::c_long;
-pub type __ssize_t = libc::c_long;
-pub type __syscall_slong_t = libc::c_long;
-pub type size_t = libc::c_ulong;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct timespec {
-    pub tv_sec: __time_t,
-    pub tv_nsec: __syscall_slong_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct stat {
-    pub st_dev: __dev_t,
-    pub st_ino: __ino_t,
-    pub st_nlink: __nlink_t,
-    pub st_mode: __mode_t,
-    pub st_uid: __uid_t,
-    pub st_gid: __gid_t,
-    pub __pad0: libc::c_int,
-    pub st_rdev: __dev_t,
-    pub st_size: __off_t,
-    pub st_blksize: __blksize_t,
-    pub st_blocks: __blkcnt_t,
-    pub st_atim: timespec,
-    pub st_mtim: timespec,
-    pub st_ctim: timespec,
-    pub __glibc_reserved: [__syscall_slong_t; 3],
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct _IO_FILE {
-    pub _flags: libc::c_int,
-    pub _IO_read_ptr: *mut libc::c_char,
-    pub _IO_read_end: *mut libc::c_char,
-    pub _IO_read_base: *mut libc::c_char,
-    pub _IO_write_base: *mut libc::c_char,
-    pub _IO_write_ptr: *mut libc::c_char,
-    pub _IO_write_end: *mut libc::c_char,
-    pub _IO_buf_base: *mut libc::c_char,
-    pub _IO_buf_end: *mut libc::c_char,
-    pub _IO_save_base: *mut libc::c_char,
-    pub _IO_backup_base: *mut libc::c_char,
-    pub _IO_save_end: *mut libc::c_char,
-    pub _markers: *mut _IO_marker,
-    pub _chain: *mut _IO_FILE,
-    pub _fileno: libc::c_int,
-    pub _flags2: libc::c_int,
-    pub _old_offset: __off_t,
-    pub _cur_column: libc::c_ushort,
-    pub _vtable_offset: libc::c_schar,
-    pub _shortbuf: [libc::c_char; 1],
-    pub _lock: *mut libc::c_void,
-    pub _offset: __off64_t,
-    pub _codecvt: *mut _IO_codecvt,
-    pub _wide_data: *mut _IO_wide_data,
-    pub _freeres_list: *mut _IO_FILE,
-    pub _freeres_buf: *mut libc::c_void,
-    pub __pad5: size_t,
-    pub _mode: libc::c_int,
-    pub _unused2: [libc::c_char; 20],
-}
-pub type _IO_lock_t = ();
-pub type FILE = _IO_FILE;
-pub type ssize_t = __ssize_t;
+pub use crate::json_object::json_object;
+pub use crate::json_c_version::json_c_version;
+pub use crate::json_c_version::json_c_version_num;
+pub use crate::json_object::json_object_put;
+pub use crate::json_object::json_object_to_json_string;
+pub use crate::json_tokener::json_tokener_parse;
+pub use crate::json_util::json_object_from_fd;
+pub use crate::json_util::json_object_from_fd_ex;
+pub use crate::json_util::json_object_from_file;
+pub use crate::json_util::json_object_to_fd;
+pub use crate::json_util::json_object_to_file;
+pub use crate::json_util::json_object_to_file_ext;
+pub use crate::json_util::json_util_get_last_err;
+pub use crate::strerror_override::_json_c_strerror;
+pub use crate::random_seed::__dev_t;
+pub use crate::random_seed::__uid_t;
+pub use crate::random_seed::__gid_t;
+pub use crate::random_seed::__ino_t;
+pub use crate::random_seed::__mode_t;
+pub use crate::random_seed::__nlink_t;
+pub use crate::apps::json_parse::__off_t;
+pub use crate::apps::json_parse::__off64_t;
+pub use crate::apps::json_parse::__time_t;
+pub use crate::random_seed::__blksize_t;
+pub use crate::random_seed::__blkcnt_t;
+pub use crate::apps::json_parse::__ssize_t;
+pub use crate::apps::json_parse::__syscall_slong_t;
+pub use crate::apps::json_parse::size_t;
+// #[derive(Copy, Clone)]
+
+pub use crate::random_seed::timespec;
+// #[derive(Copy, Clone)]
+
+pub use crate::random_seed::stat;
+// #[derive(Copy, Clone)]
+
+pub use crate::apps::json_parse::_IO_FILE;
+pub use crate::apps::json_parse::_IO_lock_t;
+pub use crate::apps::json_parse::FILE;
+pub use crate::apps::json_parse::ssize_t;
 unsafe extern "C" fn test_write_to_file() {
     let mut jso: *mut json_object = 0 as *mut json_object;
     jso = json_tokener_parse(
