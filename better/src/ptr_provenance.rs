@@ -1978,7 +1978,10 @@ impl PtrProvenancePass {
                 }
                 None
             },
-            ExprKind::InlineAsm(_) => panic!("inline assembly is not supported"),
+            ExprKind::InlineAsm(_) => {
+                // panic!("inline assembly is not supported")
+                Some(expr_term)
+            },
             ExprKind::LlvmInlineAsm(_) => {
                 log::warn!(
                     "LLVM inline assembly is not supported. Pointer provenance results will be imprecise"
