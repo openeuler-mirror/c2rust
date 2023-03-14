@@ -2,7 +2,7 @@
 
 #### 介绍
 
-​        本项目将在c2rust(https://github.com/immunant/c2rust)已有工作的基础之上，实现一个可将不安全的Rust代码转换为更安全的Rust代码的原型系统，该系统可删除重复的类型定义，移除部分不必要的unsafe标记，并将部分裸指针转换为安全引用。
+​        本项目将在[c2rust](https://github.com/immunant/c2rust)已有工作的基础之上，实现一个可将不安全的Rust代码转换为更安全的Rust代码的原型系统，该系统可删除重复的类型定义，移除部分不必要的unsafe标记，并将部分裸指针转换为安全引用。
 
 #### 软件架构
 
@@ -73,11 +73,22 @@ $ git clone https://gitee.com/openeuler/c2rust.git
   
   # 翻译得到的unsafe的rust代码保存在目录.../test-inputs/，将其复制到工作目录.../rewrite-workspace/
   $ cp -r test-inputs/* rewrite-workspace/
+  
+  # 更改调用执行路径
+  # better/rewrite-invocations/rust_v2021，将这个文件中的内容改为：
+  /your-path-to-c2rust/c2rust/better/rewrite-workspace/rust_v2021/lib.rs
+  # better/rewrite-invocations/libxml2_rust，将这个文件中的内容改为：
+  /your-path-to-c2rust/c2rust/better/rewrite-workspace/libxml2_rust/src/lib.rs 
+  -L all=/your-path-to-c2rust/c2rust/better/rewrite-workspace/libxml2_rust/target/debug/deps
+  
   # 执行reslove-imports
   # json-c测例：
   cargo run --release --bin resolve-imports -- `cat rewrite-invocations/rust_v2021`
   # libxml2测例:
-  cargo run --release --bin resolve-imports -- `cat rewrite-invocations/libxml2_rust`
+  # better/rewrite-worksapace/libxml2_rust目录下执行
+  $ cargo build
+  # better/目录下执行
+  $ cargo run --release --bin resolve-imports -- `cat rewrite-invocations/libxml2_rust`
   # curl测例：
   TODO
   
