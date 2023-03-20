@@ -45,7 +45,7 @@
 
 ## 4.1 算法描述
 
- ![4.1-1](./Safer_C2Rust设计文档/4.1-1.png)
+ <img src="./Safer_C2Rust设计文档/4.1-1.png" alt="4.1-1" style="zoom: 50%;" />
 
 **Resolve-lifetimes流程图**
 
@@ -71,11 +71,11 @@
 
   比如：在node_t结构体中
 
-![4.1.1-1](./Safer_C2Rust设计文档/4.1.1-1.png)
+<img src="./Safer_C2Rust设计文档/4.1.1-1.png" alt="4.1.1-1" style="zoom:67%;" />
 
   初步改写后(为每个类型提供不同的生命周期参数)
 
-![4.1.1-2](./Safer_C2Rust设计文档/4.1.1-2.png)
+<img src="./Safer_C2Rust设计文档/4.1.1-2.png" alt="4.1.1-2" style="zoom:67%;" />
 
 可变的借用是不可复制或克隆的，因此我们从受影响的数据结构中删除#[derive(Copy,Clone)]注释。
 
