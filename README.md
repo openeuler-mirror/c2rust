@@ -6,7 +6,7 @@
 
 #### 软件架构
 
-![框架图](./picture/框架图.jpg)
+<img src="./Safer_C2Rust设计文档/Safer_C2Rust架构图.png" alt="Safer_C2Rust架构图" />
 
 ​          本系统原型由两部分组成：1.翻译前端;2.优化工具。将c2rust作为本系统原型的**翻译前端**，进行C到Rust的翻译；将得到的翻译结果作为**优化工具better**的输入，在**Resolve-Imports组件**中去除重复类型定义，在**Resolve-lifetime组件**中提升安全性；最终输出更安全Rust代码。
 
