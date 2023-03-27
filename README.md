@@ -67,6 +67,7 @@ $ git clone https://gitee.com/openeuler/c2rust.git
 + 执行命令
 
   ```shell
+  
   # 进入优化工具better目录
   $ cd ~/path-to-c2rust/c2rust/better
   # 以下指令均在better目录下执行
