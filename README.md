@@ -184,6 +184,9 @@ git submodule status
 git status
 git commit -a -m "Moved Submodule pointer to version 0.15"
 ```
+#### 3.算法效果
+
+对比`better/test-inputs/jsonc_rust`和`better/rewrite-workspace/jsonc_rust`
 
 ### Step2 - 执行Resolve-LifetimeS算法
 
