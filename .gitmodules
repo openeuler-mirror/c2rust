@@ -1,0 +1,9 @@
+[submodule "c2rust"]
+	path = c2rust
+	url = git@gitee.com:mirrors/C2Rust.git
+[submodule "c-code/json-c"]
+	path = c-code/json-c
+	url = git@gitee.com:routingjiang/json-c.git
+[submodule "c-code/libxml2"]
+	path = c-code/libxml2
+	url = git@gitee.com:umu618/libxml2.git
