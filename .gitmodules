@@ -1,3 +1,6 @@
 [submodule "c2rust"]
 	path = c2rust
 	url = git@gitee.com:mirrors/C2Rust.git
+[submodule "c-code/json-c"]
+	path = c-code/json-c
+	url = git@gitee.com:routingjiang/json-c.git
