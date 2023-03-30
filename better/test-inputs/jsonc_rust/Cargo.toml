@@ -2,7 +2,7 @@
 members = [
 ]
 [package]
-name = "rust_v2021"
+name = "jsonc_rust"
 authors = ["C2Rust"]
 version = "0.0.0"
 publish = false
@@ -10,7 +10,7 @@ edition = "2018"
 autobins = false
 
 [lib]
-name = "rust_v2021"
+name = "jsonc_rust"
 path = "src/lib.rs"
 crate-type = ["staticlib", "rlib"]
 [dependencies]
