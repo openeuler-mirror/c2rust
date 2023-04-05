@@ -177,13 +177,6 @@ $ cargo clean
 $ cargo run --release --bin resolve-imports -- `cat rewrite-invocations/jsonc_rust`
 ```
 
-```
-git submodule add git@gitee.com:umu618/libxml2.git ./c-code/libxml2
-git checkout 0.15
-git submodule status
-git status
-git commit -a -m "Moved Submodule pointer to version 0.15"
-```
 #### 3.算法效果
 
 对比`better/test-inputs/jsonc_rust`和`better/rewrite-workspace/jsonc_rust`
