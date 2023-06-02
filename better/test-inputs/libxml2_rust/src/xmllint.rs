@@ -4713,11 +4713,13 @@ unsafe extern "C" fn parseAndPrintFile(
             } else if canonical != 0 {
                 let mut result: *mut xmlChar = 0 as *mut xmlChar;
                 let mut size_0: libc::c_int = 0;
+                let prefix_0: *mut *mut xmlChar = 0 as *mut *mut xmlChar;
                 size_0 = xmlC14NDocDumpMemory(
                     doc,
                     0 as xmlNodeSetPtr,
                     XML_C14N_1_0 as libc::c_int,
-                    0 as *mut *mut xmlChar,
+                    // 0 as *mut *mut xmlChar,
+                    prefix_0,
                     1 as libc::c_int,
                     &mut result,
                 );
@@ -4747,11 +4749,13 @@ unsafe extern "C" fn parseAndPrintFile(
             } else if canonical_11 != 0 {
                 let mut result_0: *mut xmlChar = 0 as *mut xmlChar;
                 let mut size_1: libc::c_int = 0;
+                let prefix_1: *mut *mut xmlChar = 0 as *mut *mut xmlChar;
                 size_1 = xmlC14NDocDumpMemory(
                     doc,
                     0 as xmlNodeSetPtr,
                     XML_C14N_1_1 as libc::c_int,
-                    0 as *mut *mut xmlChar,
+                    // 0 as *mut *mut xmlChar,
+                    prefix_1,
                     1 as libc::c_int,
                     &mut result_0,
                 );
@@ -4781,11 +4785,13 @@ unsafe extern "C" fn parseAndPrintFile(
             } else if exc_canonical != 0 {
                 let mut result_1: *mut xmlChar = 0 as *mut xmlChar;
                 let mut size_2: libc::c_int = 0;
+                let prefix_2: *mut *mut xmlChar = 0 as *mut *mut xmlChar;
                 size_2 = xmlC14NDocDumpMemory(
                     doc,
                     0 as xmlNodeSetPtr,
                     XML_C14N_EXCLUSIVE_1_0 as libc::c_int,
-                    0 as *mut *mut xmlChar,
+                    // 0 as *mut *mut xmlChar,
+                    prefix_2,
                     1 as libc::c_int,
                     &mut result_1,
                 );

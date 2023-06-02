@@ -40,8 +40,19 @@ impl<Var> Ctor<Var> {
     }
 }
 
+impl<Var: Copy> Ctor<Var> {
+    pub fn repack_in_place<F: FnMut(Var) -> Var>(&mut self, f: &mut F) {
+        for s in self.1.iter_mut() {
+            *s = s.repack(f);
+        }
+        for s in self.2.iter_mut() {
+            *s = s.repack(f);
+        }
+    }
+}
+
 /// Non-constructor terms, these can be arguments to constructors
-#[derive(Clone, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
 pub enum SimpleTerm<Var> {
     /// A logic variable X
     LV(Var),
@@ -72,6 +83,24 @@ impl<Var> SimpleTerm<Var> {
         } else {
             panic!("Tried to unwrap LV out of a non-LV simple term")
         }
+    }
+
+    pub fn get_lv(&self) -> Option<&Var> {
+        match self {
+            SimpleTerm::LV(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn maybe_lv(self) -> Option<Var> {
+        match self {
+            SimpleTerm::LV(x) => Some(x),
+            _ => None,
+        }
+    }
+
+    pub fn to_term(self) -> Term<Var> {
+        Term::S(self)
     }
 }
 

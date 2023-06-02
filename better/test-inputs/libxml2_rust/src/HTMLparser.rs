@@ -10336,7 +10336,8 @@ pub unsafe extern "C" fn UTF8ToHtml(
     let mut outend: *const libc::c_uchar = 0 as *const libc::c_uchar;
     let mut outstart: *const libc::c_uchar = out;
     let mut instart: *const libc::c_uchar = in_0;
-    let mut inend: *const libc::c_uchar = 0 as *const libc::c_uchar;
+    // let mut inend: *const libc::c_uchar = 0 as *const libc::c_uchar;
+    let mut inend: *const u8 = 0 as *const libc::c_void as *const u8;
     let mut c: libc::c_uint = 0;
     let mut d: libc::c_uint = 0;
     let mut trailing: libc::c_int = 0;
@@ -10457,7 +10458,7 @@ pub unsafe extern "C" fn htmlEncodeEntities(
     let mut outend: *const libc::c_uchar = 0 as *const libc::c_uchar;
     let mut outstart: *const libc::c_uchar = out;
     let mut instart: *const libc::c_uchar = in_0;
-    let mut inend: *const libc::c_uchar = 0 as *const libc::c_uchar;
+    let mut inend: *const libc::c_uchar = 0 as *const libc::c_void as *const libc::c_uchar;
     let mut c: libc::c_uint = 0;
     let mut d: libc::c_uint = 0;
     let mut trailing: libc::c_int = 0;

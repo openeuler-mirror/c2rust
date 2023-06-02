@@ -34,24 +34,30 @@
         + bin/
           + resolve-imports.rs  -- 去除重复类型算法
           + resolve-lifetime.rs -- 安全性提升算法
+   + unsafe-fixer --优化工具
+   + unsafe-ana   --测试统计工具
   ```
 
 + 优化流程
 
   ```
-  		 C Program 
-     			|
-     			|  C2Rust（翻译前端）
-     			V
-  		 Unsafe rust program：重复类型定义 + extern + unsafe 
-     			|
-     			|  ResolveImports （优化工具better）
-     			V
-  			Unsafe rust program：已去除重复类型定义，消除非必要的extern，使用use引入，消除非必要的unsafe
-     			|
-     			|  ResolveLifetimes （优化工具better）
-     			V
-  			Safer rust program：去除重复类型定义，消除非必要的unsafe，改写部分裸指针
+       C Program 
+          |
+          |  C2Rust（翻译前端）
+          V
+       Unsafe rust program：重复类型定义 + extern + unsafe 
+          |
+          |  ResolveImports （优化工具better）
+          V
+        Unsafe rust program：已去除重复类型定义，消除非必要的extern，使用use引入，消除非必要的unsafe
+          |
+          |  ResolveLifetimes （优化工具better）
+          V
+        unsafe rust program: unsafe范围过大
+          |
+          |  unsafe-fixer （优化工具unsafe-fixer）
+          V
+        Safer rust program：去除重复类型定义，消除非必要的unsafe，改写部分裸指针
   ```
 
 
@@ -183,4 +189,46 @@ $ cargo run --release --bin resolve-imports -- `cat rewrite-invocations/jsonc_ru
 
 ### Step2 - 执行Resolve-LifetimeS算法
 
-**Todo**
+#### 1. 输入-工具-输出
+
++ **输入(初始Rust代码)**：`~/your_path/c2rust/better/rewrite-workspace/jsonc_rust`
++ **工具(better - resolve-imports)**：`~/your_path/c2rust/better/src/bin/resolve-lifetimes.rs`
++ **输出(去除重复类型后的Rust代码)**：`~/your_path/c2rust/better/rewrite-workspace/jsonc_rust`
+
+#### 2. 执行命令
+
++ **执行resolve-lifetimes算法**
+
+```shell
+# 进入优化工具better目录下
+$ cargo clean
+$ cargo run --release --bin resolve-lifetimes -- `cat rewrite-invocations/jsonc_rust`
+```
+
+#### 3. 算法效果
+
+对比`better/test-inputs/jsonc_rust`和`better/rewrite-workspace/jsonc_rust`
+
+### Step3 - 执行unsafe-fixer算法
+
+#### 1. 输入-工具-输出
+
++ **输入(初始Rust代码)**：`~/your_path/c2rust/better/rewrite-workspace/jsonc_rust`
++ **工具(better - resolve-imports)**：`~/your_path/c2rust/unsafe-fixer`
++ **输出(去除重复类型后的Rust代码)**：`~/your_path/c2rust/better/rewrite-workspace/jsonc_rust`
+
+#### 2. 执行命令
+
++ **执行unsafe-fixer算法**
+
+```shell
+# 进入优化工具unsafe-fixer目录下
+$ cargo clean
+$ cargo build --release
+$ target/release/unsafe-fixer /your_path/c2rust/better/rewrite-workspace/jsonc_rust
+```
+
+#### 3. 算法效果
+
+对比`better/test-inputs/jsonc_rust`和`better/rewrite-workspace/jsonc_rust`
+

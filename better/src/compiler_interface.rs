@@ -8,7 +8,7 @@ use rustc_session::DiagnosticOutput;
 use std::{
     io::{BufWriter, Write},
     mem,
-    sync::{Arc, Mutex},
+    sync::Mutex,
     time::{Duration, Instant},
 };
 
@@ -119,6 +119,7 @@ pub fn run_compiler_with_setup<SetupFn: FnOnce(&mut DriverCallbacks)>(
         // Add the given arguments
         args.append(&mut extra_args.iter().map(|s| s.to_string()).collect());
 
+        // 设置 DriverCallbacks 结构并将 after_typeck_passes 字段设置为passes。然后它使用对回调变量的可变引用调用闭包设置。
         // Run the compiler with the printer callbacks
         let mut callbacks = DriverCallbacks::new();
         // disable the passes for testing
@@ -178,6 +179,7 @@ pub fn run_compiler_frontend(
     (exit_code, compile_time)
 }
 
+// passed是回调函数的集合
 pub fn run_compiler(extra_args: &Vec<&str>, passes: Vec<LateCallback>) -> (i32, Duration) {
     let orig_args: Vec<String> = std::env::args().collect();
     let args = cli::read_env(orig_args);

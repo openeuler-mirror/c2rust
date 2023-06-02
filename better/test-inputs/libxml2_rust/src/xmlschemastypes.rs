@@ -1282,38 +1282,169 @@ pub struct _xmlSchemaValDuration {
     pub sec: libc::c_double,
 }
 pub type xmlSchemaValDate = _xmlSchemaValDate;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct _xmlSchemaValDate {
     pub year: libc::c_long,
-    #[bitfield(name = "mon", ty = "libc::c_uint", bits = "0..=3")]
-    #[bitfield(name = "day", ty = "libc::c_uint", bits = "4..=8")]
-    #[bitfield(name = "hour", ty = "libc::c_uint", bits = "9..=13")]
-    #[bitfield(name = "min", ty = "libc::c_uint", bits = "14..=19")]
+    // #[bitfield(name = "mon", ty = "libc::c_uint", bits = "0..=3")]
+    // #[bitfield(name = "day", ty = "libc::c_uint", bits = "4..=8")]
+    // #[bitfield(name = "hour", ty = "libc::c_uint", bits = "9..=13")]
+    // #[bitfield(name = "min", ty = "libc::c_uint", bits = "14..=19")]
     pub mon_day_hour_min: [u8; 3],
-    #[bitfield(padding)]
+    // #[bitfield(padding)]
     pub c2rust_padding: [u8; 5],
     pub sec: libc::c_double,
-    #[bitfield(name = "tz_flag", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "tzo", ty = "libc::c_int", bits = "1..=12")]
+    // #[bitfield(name = "tz_flag", ty = "libc::c_uint", bits = "0..=0")]
+    // #[bitfield(name = "tzo", ty = "libc::c_int", bits = "1..=12")]
     pub tz_flag_tzo: [u8; 2],
-    #[bitfield(padding)]
+    // #[bitfield(padding)]
     pub c2rust_padding_0: [u8; 6],
 }
+impl _xmlSchemaValDate {
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_mon(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (0usize, 3usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn mon(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (0usize, 3usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_day(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (4usize, 8usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn day(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (4usize, 8usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_hour(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (9usize, 13usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn hour(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (9usize, 13usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_min(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (14usize, 19usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn min(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.mon_day_hour_min;
+        let (lhs_bit, rhs_bit) = (14usize, 19usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_tz_flag(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.tz_flag_tzo;
+        let (lhs_bit, rhs_bit) = (0usize, 0usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn tz_flag(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.tz_flag_tzo;
+        let (lhs_bit, rhs_bit) = (0usize, 0usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_tzo(&mut self, int: libc::c_int) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.tz_flag_tzo;
+        let (lhs_bit, rhs_bit) = (1usize, 12usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn tzo(&self) -> libc::c_int {
+        use c2rust_bitfields::FieldType;
+        let field = &self.tz_flag_tzo;
+        let (lhs_bit, rhs_bit) = (1usize, 12usize);
+        <i32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+}
+
 pub type xmlSchemaValDecimal = _xmlSchemaValDecimal;
-#[derive(Copy, Clone, BitfieldStruct)]
+#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct _xmlSchemaValDecimal {
     pub lo: libc::c_ulong,
     pub mi: libc::c_ulong,
     pub hi: libc::c_ulong,
     pub extra: libc::c_uint,
-    #[bitfield(name = "sign", ty = "libc::c_uint", bits = "0..=0")]
-    #[bitfield(name = "frac", ty = "libc::c_uint", bits = "1..=7")]
-    #[bitfield(name = "total", ty = "libc::c_uint", bits = "8..=15")]
+    // #[bitfield(name = "sign", ty = "libc::c_uint", bits = "0..=0")]
+    // #[bitfield(name = "frac", ty = "libc::c_uint", bits = "1..=7")]
+    // #[bitfield(name = "total", ty = "libc::c_uint", bits = "8..=15")]
     pub sign_frac_total: [u8; 2],
-    #[bitfield(padding)]
+    // #[bitfield(padding)]
     pub c2rust_padding: [u8; 2],
+}
+impl _xmlSchemaValDecimal {
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_sign(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (0usize, 0usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn sign(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (0usize, 0usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_frac(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (1usize, 7usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn frac(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (1usize, 7usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
+    #[doc = r" This method allows you to write to a bitfield with a value"]
+    pub fn set_total(&mut self, int: libc::c_uint) {
+        use c2rust_bitfields::FieldType;
+        let field = &mut self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (8usize, 15usize);
+        int.set_field(field, (lhs_bit, rhs_bit));
+    }
+    #[doc = r" This method allows you to read from a bitfield to a value"]
+    pub fn total(&self) -> libc::c_uint {
+        use c2rust_bitfields::FieldType;
+        let field = &self.sign_frac_total;
+        let (lhs_bit, rhs_bit) = (8usize, 15usize);
+        <u32 as FieldType>::get_field(field, (lhs_bit, rhs_bit))
+    }
 }
 pub type xmlSchemaVal = _xmlSchemaVal;
 pub type xmlSchemaValPtr = *mut xmlSchemaVal;
@@ -4077,7 +4208,7 @@ unsafe extern "C" fn xmlSchemaValAtomicType(
                                                 *cptr = 0 as libc::c_int as xmlChar;
                                                 cptr = cval.as_mut_ptr();
                                                 xmlSchemaParseUInt(
-                                                    &mut cptr as *mut *mut xmlChar as *mut *const xmlChar,
+                                                    &mut (cptr as * const u8),
                                                     &mut (*v).value.decimal.lo,
                                                     &mut (*v).value.decimal.mi,
                                                     &mut (*v).value.decimal.hi,

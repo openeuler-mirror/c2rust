@@ -4,37 +4,15 @@ use crate::{
     analysis,
     analysis::commons::*,
     compiler_interface::*,
-    constants::*,
-    io::{FileIO, OutputMode},
     lazy_static::lazy_static,
-    ptr_provenance::*,
-    rustc_ast::ast::LitKind,
-    rustc_driver,
-    rustc_errors::emitter::{ColorConfig, HumanReadableErrorType},
-    rustc_hir,
-    rustc_hir::{intravisit::FnKind, Generics, *},
-    rustc_interface,
+    ptr_provenance::Loc,
+    rustc_hir::{intravisit::FnKind, *},
     rustc_lint::{LateContext, LateLintPass, LintContext, LintPass},
-    rustc_span::{
-        sym,
-        symbol::{Ident, Symbol},
-        BytePos, FileName, Span,
-    },
-    types::{FnSig, Lifetime, *},
+    rustc_span::{source_map::SourceMap, FileName, Span},
+    types::*,
     util::{HashMap, HashSet},
 };
-use rustfix::{Replacement, Snippet, Solution, Suggestion};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    convert::TryFrom,
-    ops::Bound,
-    panic,
-    path::PathBuf,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
-    },
-};
+use std::{collections::BTreeMap, convert::TryFrom, fmt::Debug, ops::Bound, panic, sync::Mutex};
 
 lazy_static! {
     pub static ref EDIT_OFFSETS: Mutex<EditOffsets> = Mutex::new(EditOffsets::default());
@@ -47,6 +25,35 @@ pub struct FatSpan {
     pub file_name: Name,
     pub begin: u32,
     pub end: u32,
+}
+
+impl FatSpan {
+    /// Flip the beginning and the end if they are in incorrect order
+    pub fn normalized(mut self) -> FatSpan {
+        if self.begin > self.end {
+            std::mem::swap(&mut self.begin, &mut self.end);
+        }
+        self
+    }
+
+    pub fn from_span(span: Span, source_map: &SourceMap) -> FatSpan {
+        let fname = source_map.span_to_filename(span);
+        let file_name = match &fname {
+            FileName::Real(ref n) => Name::from(n.local_path().unwrap().to_str().unwrap()),
+            _ => panic!(
+                "Cannot read the file name for span, it is not a real file: {:?}",
+                span
+            ),
+        };
+        let file = source_map.get_source_file(&fname).unwrap();
+        let lo_offset = file.original_relative_byte_pos(span.lo()).0;
+        let hi_offset = file.original_relative_byte_pos(span.hi()).0;
+        FatSpan {
+            file_name,
+            begin: lo_offset as u32,
+            end: hi_offset as u32,
+        }
+    }
 }
 
 /// The data structure to keep track of offset changes done during
@@ -186,7 +193,7 @@ impl EditOffsets {
     }
 
     pub fn compute_cumulative_offsets(&mut self) {
-        for (file_name, info) in &mut self.per_file_info {
+        for (_file_name, info) in &mut self.per_file_info {
             // all edits are ordered and non-overlapping so we can
             // incrementally compute cumulative offsets
             let mut cum_offset = 0i32;
@@ -207,11 +214,24 @@ impl EditOffsets {
         self.dirty = false;
     }
 
+    pub fn dump_cumulative_offsets(&self) {
+        if self.dirty {
+            panic!("The cumulative offsets are not computed after the last edit!");
+        }
+
+        for (file, info) in &self.per_file_info {
+            println!("cumulative negative offsets for {}", file);
+            for (cursor, offset) in &info.cumulative_neg_offsets {
+                println!("- {}: {:?}", cursor, offset);
+            }
+        }
+    }
+
     /// Reverse lookup possible origins of a byte position in the new file.
     pub fn reverse_lookup_pos(&self, file_name: &Name, pos: u32) -> (u32, u32) {
         // use panic instead of assert because we want this check even in optimized mode
         if self.dirty {
-            panic!("The cumulative offsets are not computed after the last edit!");
+            panic!("The cumulative offsets are not computed since the last edit!");
         }
 
         if let Some(info) = self.per_file_info.get(file_name) {
@@ -253,6 +273,19 @@ impl EditOffsets {
             begin: earliest_begin,
             end: latest_end,
         }
+    }
+
+    /// Reverse lookup the narrowest possible span that the given span
+    /// in new code is derived from.
+    pub fn narrowest_origin_span(&self, span: &FatSpan) -> FatSpan {
+        let latest_begin = self.reverse_lookup_pos(&span.file_name, span.begin).1;
+        let earliest_end = self.reverse_lookup_pos(&span.file_name, span.end).0;
+        (FatSpan {
+            file_name: span.file_name.clone(),
+            begin: latest_begin,
+            end: earliest_end,
+        })
+        .normalized()
     }
 }
 
@@ -385,20 +418,20 @@ impl<V: PartialEq + Eq> SpanMap<V> {
 /// a range-tree like construct to look up the data associated with a
 /// span.
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct OverlappingSpanMap<V: PartialEq + Eq> {
+pub struct OverlappingSpanMap<V: PartialEq + Eq + Debug> {
     /// The internal structure is kept as `filename -> begin -> end`,
     /// and the inner map is a `BTreeMap` which allows us to find the
     /// related ranges quickly.
-    internal_map: HashMap<Name, BTreeMap<u32, (u32, V)>>,
+    internal_map: HashMap<Name, BTreeMap<u32, BTreeMap<u32, V>>>,
 }
 
-impl<V: PartialEq + Eq> Default for OverlappingSpanMap<V> {
+impl<V: PartialEq + Eq + Debug> Default for OverlappingSpanMap<V> {
     fn default() -> Self {
         OverlappingSpanMap::new()
     }
 }
 
-impl<V: PartialEq + Eq> OverlappingSpanMap<V> {
+impl<V: PartialEq + Eq + Debug> OverlappingSpanMap<V> {
     pub fn new() -> Self {
         OverlappingSpanMap {
             internal_map: HashMap::default(),
@@ -416,8 +449,8 @@ impl<V: PartialEq + Eq> OverlappingSpanMap<V> {
         // something that contains `span.end`.
         self.internal_map.get(&span.file_name).and_then(|m| {
             m.range((Bound::Unbounded, Bound::Included(span.begin)))
-                .rfind(|(_, (end, _))| span.end <= *end)
-                .map(|(_, (_, value))| value)
+                .rfind(|(_, ends)| ends.keys().any(|end| span.end <= *end))
+                .map(|(_, ends)| ends.iter().find(|(end, _)| span.end <= **end).unwrap().1)
         })
     }
 
@@ -426,18 +459,52 @@ impl<V: PartialEq + Eq> OverlappingSpanMap<V> {
         // something that contains `span.end`.
         self.internal_map.get_mut(&span.file_name).and_then(|m| {
             m.range_mut((Bound::Unbounded, Bound::Included(span.begin)))
-                .rfind(|(_, (end, _))| span.end <= *end)
-                .map(|(_, (_, value))| value)
+                .rfind(|(_, ends)| ends.keys().any(|end| span.end <= *end))
+                .map(|(_, ends)| {
+                    ends.iter_mut()
+                        .find(|(end, _)| span.end <= **end)
+                        .unwrap()
+                        .1
+                })
         })
     }
 
-    /// Insert given value without any checks for overlaps. Returns the previous value if there was already a value for this span
+    /// Insert given value without any checks for overlaps. Returns
+    /// the previous value if there was already a value for this span
     pub fn insert(&mut self, span: FatSpan, value: V) -> Option<V> {
         self.internal_map
             .entry(span.file_name)
             .or_default()
-            .insert(span.begin, (span.end, value))
-            .map(|p| p.1)
+            .entry(span.begin)
+            .or_default()
+            .insert(span.end, value)
+    }
+}
+
+impl<V: PartialEq + Eq + Debug> OverlappingSpanMap<V> {
+    pub fn dump(&self) {
+        for (file, spans) in &self.internal_map {
+            println!("spans in {}", file);
+            for (begin, ends) in spans {
+                for (end, value) in ends {
+                    println!(
+                        "- [{begin}, {end}] -> {value:?}",
+                        begin = begin,
+                        end = end,
+                        value = value
+                    );
+                }
+            }
+        }
+    }
+}
+
+impl<V: PartialEq + Eq + Debug + Default> OverlappingSpanMap<V> {
+    pub fn get_or_default(&mut self, span: FatSpan) -> &mut V {
+        if self.get(&span).is_none() {
+            self.insert(span.clone(), Default::default());
+        }
+        self.get_mut(&span).unwrap()
     }
 }
 
@@ -450,12 +517,41 @@ pub struct SpanInfo {
     /// Look-up table for each span to the ID of the expression
     /// covering it
     pub span_to_hir_id: OverlappingSpanMap<HirId>,
+    /// Look-up table for each assignment span to the ID of the left-hand side
+    /// of the assignment
+    ///
+    /// TODO(maemre): also insert the patterns for let bindings.
+    pub span_to_lhs_id: OverlappingSpanMap<HirId>,
+    /// Look up spans for rewritten type text to the associated
+    /// pattern/expression location and semantic type.
+    pub span_to_rewritten_type: OverlappingSpanMap<HashSet<(Type, Option<Loc<Name>>)>>,
 }
 
 impl SpanInfo {
-    /// Find the ID of the smallest expression that contains the given span
+    /// Find the ID of the smallest expression that contains the given
+    /// span
     pub fn lookup_hir_id(&self, span: &FatSpan) -> Option<HirId> {
         self.span_to_hir_id.get(span).cloned()
+    }
+    /// Find the ID of the left-hand side of the smallest assignment
+    /// that contains the given span
+    pub fn lookup_lhs_id(&self, span: &FatSpan) -> Option<HirId> {
+        self.span_to_lhs_id.get(span).cloned()
+    }
+    /// Find the ID of the left-hand side of the smallest assignment
+    /// that contains the given span
+    pub fn lookup_rewritten_type(
+        &self,
+        span: &FatSpan,
+    ) -> Option<&HashSet<(Type, Option<Loc<Name>>)>> {
+        self.span_to_rewritten_type.get(span)
+    }
+    /// Find the ID of the left-hand side of the smallest assignment
+    /// that contains the given span
+    pub fn insert_rewritten_type(&mut self, span: FatSpan, ty: Type, loc: Option<Loc<Name>>) {
+        self.span_to_rewritten_type
+            .get_or_default(span)
+            .insert((ty, loc));
     }
 }
 
@@ -503,22 +599,7 @@ impl<'tcx> LateLintPass<'tcx> for SpanInfoPass {
         }
 
         let name = Name::from(get_hir_qname(ctx, hir_id));
-        let source_map = ctx.sess().source_map();
-        let fname = source_map.span_to_filename(span);
-        let file_name = match &fname {
-            FileName::Real(ref n) => Name::from(n.local_path().unwrap().to_str().unwrap()),
-            _ => {
-                return;
-            },
-        };
-        let file = source_map.get_source_file(&fname).unwrap();
-        let lo_offset = file.original_relative_byte_pos(span.lo()).0;
-        let hi_offset = file.original_relative_byte_pos(span.hi()).0;
-        let span = FatSpan {
-            file_name,
-            begin: lo_offset as u32,
-            end: hi_offset as u32,
-        };
+        let span = FatSpan::from_span(span, ctx.sess().source_map());
 
         self.info.fn_spans.insert(name.clone(), span.clone());
         assert!(
@@ -553,6 +634,12 @@ impl<'tcx> LateLintPass<'tcx> for SpanInfoPass {
             end: hi_offset as u32,
         };
 
+        if let ExprKind::Assign(lhs, _, _) = &e.kind {
+            log::trace!("inserting assignment {:?} -> {:?}", span, lhs.hir_id);
+            self.info.span_to_lhs_id.insert(span.clone(), lhs.hir_id);
+        }
+
+        log::trace!("inserting {:?} -> {:?}", span, e.hir_id);
         self.info.span_to_hir_id.insert(span, e.hir_id);
     }
 

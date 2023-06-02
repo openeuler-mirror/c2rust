@@ -787,7 +787,7 @@ pub unsafe extern "C" fn xmlNewMutex() -> xmlMutexPtr {
     let mut tok: xmlMutexPtr = 0 as *mut xmlMutex;
     tok = malloc(::std::mem::size_of::<xmlMutex>() as libc::c_ulong) as xmlMutexPtr;
     if tok.is_null() {
-        return 0 as xmlMutexPtr;
+        return 0 as *mut libc::c_void as xmlMutexPtr;
     }
     if libxml_is_threaded != 0 as libc::c_int {
         pthread_mutex_init(&mut (*tok).lock, 0 as *const pthread_mutexattr_t);
@@ -827,7 +827,7 @@ pub unsafe extern "C" fn xmlNewRMutex() -> xmlRMutexPtr {
     let mut tok: xmlRMutexPtr = 0 as *mut xmlRMutex;
     tok = malloc(::std::mem::size_of::<xmlRMutex>() as libc::c_ulong) as xmlRMutexPtr;
     if tok.is_null() {
-        return 0 as xmlRMutexPtr;
+        return 0 as *mut libc::c_void as xmlRMutexPtr;
     }
     if libxml_is_threaded != 0 as libc::c_int {
         pthread_mutex_init(&mut (*tok).lock, 0 as *const pthread_mutexattr_t);

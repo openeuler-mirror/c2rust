@@ -154,8 +154,23 @@ impl<V: Eq + Clone + Hash + Debug, Poison: Eq + Clone + Hash + Debug> Constraint
             // x, merge ctors.
             //
             // TODO: occurs check
+
             assert!(old.1.len() == ctor.1.len());
-            assert!(old.2.len() == ctor.2.len());
+            // Treat λ specially because of varargs, and propagate arguments in
+            // a best-effort way. λ is contravariant on parameters but still has
+            // a single return value, so we discard only the contravariant
+            // argument length check.
+            if ctor.0 != Name::from("λ") {
+                assert!(old.2.len() == ctor.2.len());
+            } else {
+                // Insert the longer λ as the λ associated with x
+                if ctor.2.len() > old.2.len() {
+                    self.ctor_map
+                        .get_mut(&root)
+                        .unwrap()
+                        .insert(ctor.0.clone(), ctor.clone());
+                }
+            }
             old.1
                 .into_iter()
                 .zip(ctor.1)
@@ -234,9 +249,7 @@ impl<V: Eq + Clone + Hash + Debug, Poison: Eq + Clone + Hash + Debug> Constraint
         self.var_to_num.get(x).copied()
     }
 
-    /// Get the number for `x`, assign it a number if one is not
-    /// assigned yet. This will clone `x` if it is not assigned a
-    /// number.
+    /// Get the variable for `x` if there is one.
     pub fn to_var(&self, x: u32) -> Option<&V> {
         self.num_to_var.get(x as usize)
     }
@@ -257,6 +270,18 @@ impl<V: Eq + Clone + Hash + Debug, Poison: Eq + Clone + Hash + Debug> Constraint
             }
         }
         s
+    }
+
+    /// Copies and returns the equivalence classes, mapped by the
+    /// root, does not optimize the union-find data structure.
+    pub fn compute_eq_classes_slow(&self) -> HashMap<u32, HashSet<V>> {
+        let mut eq_classes: HashMap<u32, HashSet<V>> = HashMap::default();
+        for x in 0..self.num_to_var.len() {
+            let root = self.find(x as u32);
+            let s = eq_classes.entry(root).or_default();
+            s.insert(self.num_to_var[x].clone());
+        }
+        eq_classes
     }
 
     /// Copies and returns the equivalence classes, mapped by the
@@ -485,6 +510,68 @@ mod tests {
 
         let ctor_set1 = mk_hash_set(vec![Ctor::simple(Name::from("c"), vec![1, 5], vec![])]);
         let ctor_set2 = mk_hash_set(vec![Ctor::simple(Name::from("c"), vec![1, 4], vec![])]);
+
+        let set_1 = mk_hash_set(vec![1, 2, 3]);
+        let set_45 = mk_hash_set(vec![4, 5]);
+
+        assert_eq!(&sys.compute_eqset(&1), &set_1);
+        assert_eq!(&sys.compute_eqset(&2), &set_1);
+        assert_eq!(&sys.compute_eqset(&3), &set_1);
+        assert_eq!(&sys.compute_eqset(&4), &set_45);
+        assert_eq!(&sys.compute_eqset(&5), &set_45);
+
+        assert!((sys.ctors(&1) == ctor_set1) || (sys.ctors(&1) == ctor_set2));
+        assert!((sys.ctors(&2) == ctor_set1) || (sys.ctors(&2) == ctor_set2));
+        assert!((sys.ctors(&3) == ctor_set1) || (sys.ctors(&2) == ctor_set2));
+        assert!(sys.ctors(&4).is_empty());
+        assert!(sys.ctors(&5).is_empty());
+    }
+
+    #[test]
+    fn solve_invariance() {
+        use SimpleTerm::*;
+        use Term::*;
+
+        // Testing the following set of constraints (note that everything is on the contravariant side):
+        //
+        // 1 = 2
+        // 1 = 3
+        // 1 = c(;1,5)
+        // c(;3,5) = 2
+        // c(;1,4) = 1
+        //
+        // The solution has the following sets:
+        // {1, 2, 3} -> {c(;1,4)}
+        // {4, 5} -> {}
+
+        let mut sys = ConstraintSystem::<u32, ()>::new();
+
+        let goal_set = mk_hash_set(vec![
+            Constraint(S(LV(1)), S(LV(2))),
+            Constraint(S(LV(1)), S(LV(3))),
+            Constraint(
+                S(LV(1)),
+                C(Ctor::simple(Name::from("c"), vec![], vec![1, 5])),
+            ),
+            Constraint(
+                C(Ctor::simple(Name::from("c"), vec![], vec![3, 5])),
+                S(LV(2)),
+            ),
+            Constraint(
+                C(Ctor::simple(Name::from("c"), vec![], vec![1, 4])),
+                S(LV(1)),
+            ),
+        ]);
+
+        for goal in goal_set {
+            sys.add_goal(goal).unwrap();
+        }
+
+        sys.solve().unwrap();
+        println!("The solved system is: {:#?}", sys);
+
+        let ctor_set1 = mk_hash_set(vec![Ctor::simple(Name::from("c"), vec![], vec![1, 5])]);
+        let ctor_set2 = mk_hash_set(vec![Ctor::simple(Name::from("c"), vec![], vec![1, 4])]);
 
         let set_1 = mk_hash_set(vec![1, 2, 3]);
         let set_45 = mk_hash_set(vec![4, 5]);

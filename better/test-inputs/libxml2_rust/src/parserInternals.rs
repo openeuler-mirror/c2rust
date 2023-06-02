@@ -3697,7 +3697,7 @@ pub unsafe extern "C" fn xmlClearParserCtxt(mut ctxt: xmlParserCtxtPtr) {
 }
 #[no_mangle]
 pub unsafe extern "C" fn xmlParserFindNodeInfo(
-    ctx: xmlParserCtxtPtr,
+  mut  ctx: xmlParserCtxtPtr,
     node: xmlNodePtr,
 ) -> *const xmlParserNodeInfo {
     let mut pos: libc::c_ulong = 0;
@@ -3737,7 +3737,7 @@ pub unsafe extern "C" fn xmlClearNodeInfoSeq(mut seq: xmlParserNodeInfoSeqPtr) {
 }
 #[no_mangle]
 pub unsafe extern "C" fn xmlParserFindNodeInfoIndex(
-    seq: xmlParserNodeInfoSeqPtr,
+  mut  seq: xmlParserNodeInfoSeqPtr,
     node: xmlNodePtr,
 ) -> libc::c_ulong {
     let mut upper: libc::c_ulong = 0;
