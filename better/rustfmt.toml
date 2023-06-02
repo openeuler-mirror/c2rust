@@ -1,4 +1,4 @@
-merge_imports = true
+imports_granularity="Crate"
 newline_style = "Unix"
 edition = "2018"
 normalize_doc_attributes = true

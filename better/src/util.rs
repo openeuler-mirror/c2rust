@@ -1,6 +1,7 @@
 /// Utility functions
 use crate::lazy_static::lazy_static;
 use std::{
+    collections::BTreeMap,
     sync::Mutex,
     time::{Duration, Instant},
 };
@@ -16,7 +17,8 @@ pub type HashMap<K, V> = std::collections::HashMap<K, V, ahash::RandomState>;
 pub type HashSet<Elem> = std::collections::HashSet<Elem, ahash::RandomState>;
 
 lazy_static! {
-    static ref PROFILING_RESULTS: Mutex<HashMap<String, Duration>> = Mutex::new(HashMap::default());
+    static ref PROFILING_RESULTS: Mutex<BTreeMap<String, Duration>> =
+        Mutex::new(BTreeMap::default());
 }
 
 #[inline]

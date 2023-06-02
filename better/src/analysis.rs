@@ -5,6 +5,7 @@ use std::{collections::HashMap, sync::Mutex};
 
 pub mod commons;
 pub mod span;
+pub mod struct_info_pass;
 
 /// Marker trait for analysis results for an analysis, allows RTTI
 /// look-up

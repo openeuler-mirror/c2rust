@@ -1,6 +1,6 @@
 /// Set-based constraint solver for analyses in different stages.
 use crate::util::{HashMap, HashSet};
-use crate::{solver::*, util::profile, Name};
+use crate::{constants::REF, solver::*, util::profile, Name};
 use std::{fmt::Debug, hash::Hash};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Debug)]
@@ -34,9 +34,9 @@ pub struct ConstraintSystem<Var: Eq + Hash> {
     /// Inter-variable superset constraints (y ∈ supers[x] iff x ⊆ y)
     supers: Vec<HashSet<u32>>,
     /// Constructor lower bounds for each variable
-    lower: Vec<HashSet<Ctor<u32>>>,
+    lower: Vec<HashSet<HCtor>>,
     /// Constructor upper bounds for each variable
-    upper: Vec<HashSet<Ctor<u32>>>,
+    upper: Vec<HashSet<HCtor>>,
     /// Variables that should be empty
     empty: Vec<bool>,
     /// Variables that should contain everything
@@ -44,7 +44,19 @@ pub struct ConstraintSystem<Var: Eq + Hash> {
     /// Dirty bit to denote if the constraint system has changed in an
     /// iteration
     dirty: bool,
+    /// Dirty bits to denote which variables in the constraint system have a new
+    /// superset.
+    dirty_supers: Vec<bool>,
+    /// Hash cons map for constructors
+    ctor_to_hctor: HashMap<Ctor<u32>, HCtor>,
+    /// Reverse lookup table for hash consed constructors
+    hctor_to_ctor: Vec<Ctor<u32>>,
 }
+
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Debug)]
+/// A newtype for constructor hashes so that we don't confuse them with SCC IDs
+/// during the rewrite.
+pub struct HCtor(u32);
 
 impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
     pub fn new() -> Self {
@@ -57,14 +69,21 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
             all: Vec::default(),
             empty: Vec::default(),
             dirty: false,
+            dirty_supers: Vec::default(),
+            ctor_to_hctor: HashMap::default(),
+            hctor_to_ctor: Vec::default(),
         }
     }
 
-    pub fn lower(&self) -> &Vec<HashSet<Ctor<u32>>> {
+    pub fn is_solved(&self) -> bool {
+        return !self.dirty;
+    }
+
+    pub fn lower(&self) -> &Vec<HashSet<HCtor>> {
         &self.lower
     }
 
-    pub fn upper(&self) -> &Vec<HashSet<Ctor<u32>>> {
+    pub fn upper(&self) -> &Vec<HashSet<HCtor>> {
         &self.upper
     }
 
@@ -72,6 +91,15 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
     pub fn add_goal(&mut self, goal: Constraint<V>) -> Result<(), ConstraintError<V>> {
         let num_goal = goal.repack(&mut |x| self.to_num(&x));
         self.add_num_goal(num_goal)
+    }
+
+    fn hash_ctor(&mut self, ctor: Ctor<u32>) -> HCtor {
+        let next_hash = HCtor(self.hctor_to_ctor.len() as u32);
+        let h = self.ctor_to_hctor.entry(ctor.clone()).or_insert(next_hash);
+        if *h == next_hash {
+            self.hctor_to_ctor.push(ctor);
+        }
+        *h
     }
 
     #[must_use]
@@ -87,21 +115,28 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                 if x == y {
                     return Ok(());
                 }
-                self.dirty = self.supers[x as usize].insert(y) || self.dirty;
+                if self.supers[x as usize].insert(y) {
+                    self.dirty = true;
+                    self.dirty_supers[x as usize] = true;
+                }
             },
             Constraint(C(c), S(LV(x))) => {
-                self.dirty = self.lower[x as usize].insert(c) || self.dirty;
+                let h = self.hash_ctor(c);
+                self.dirty = self.lower[x as usize].insert(h) || self.dirty;
             },
             Constraint(S(LV(x)), C(c)) => {
-                self.dirty = self.upper[x as usize].insert(c) || self.dirty;
+                let h = self.hash_ctor(c);
+                self.dirty = self.upper[x as usize].insert(h) || self.dirty;
             },
             Constraint(C(c), C(d))
-                if c.0 != d.0 || c.1.len() != d.1.len() || c.2.len() != d.2.len() =>
+                if c.0 != d.0
+                    || c.1.len() != d.1.len()
+                    || (c.2.len() != d.2.len() && c.0 != Name::from("λ")) =>
             {
                 // Mismatches happen because of weak typing of the
                 // original C program, ignore them (effectively doing
                 // TBAA).
-            }
+            },
             Constraint(C(Ctor(_, lower, lower_contra)), C(Ctor(_, upper, upper_contra))) => {
                 for (x1, x2) in lower.into_iter().zip(upper.into_iter()) {
                     let c = Constraint(S(x1), S(x2));
@@ -152,15 +187,20 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
             self.supers.push(HashSet::default());
             self.empty.push(false);
             self.all.push(false);
+            self.dirty_supers.push(false);
             next_num
         }
     }
 
-    fn collect_all_possible_vars(
-        &self,
-        mut prefixes: HashSet<Vec<SimpleTerm<V>>>,
+    pub fn to_maybe_num(&self, x: &V) -> Option<u32> {
+        self.var_to_num.get(x).cloned()
+    }
+
+    fn collect_all_possible_vars<'a>(
+        &'a self,
+        mut prefixes: HashSet<Vec<SimpleTerm<&'a V>>>,
         args: &[SimpleTerm<u32>],
-    ) -> HashSet<Vec<SimpleTerm<V>>> {
+    ) -> HashSet<Vec<SimpleTerm<&'a V>>> {
         use SimpleTerm::*;
 
         for arg in args {
@@ -171,10 +211,10 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                         .iter()
                         .map(|arg_var| {
                             let mut v1 = v.clone();
-                            v1.push(LV(arg_var.clone()));
+                            v1.push(LV(arg_var));
                             v1
                         })
-                        .collect::<Vec<Vec<SimpleTerm<V>>>>(),
+                        .collect::<Vec<Vec<SimpleTerm<&V>>>>(),
                     EmptySet => {
                         let mut v1 = v.clone();
                         v1.push(EmptySet);
@@ -186,14 +226,14 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                         vec![v1]
                     },
                 })
-                .collect::<HashSet<Vec<SimpleTerm<V>>>>();
+                .collect::<HashSet<Vec<SimpleTerm<&V>>>>();
         }
         prefixes
     }
 
     /// Convert a constructor over internally assigned numbers to a
     /// constructor over `V`
-    fn repack_ctor_over_var(&self, c: Ctor<u32>) -> HashSet<Ctor<V>> {
+    fn repack_ctor_over_var(&self, c: Ctor<u32>) -> HashSet<Ctor<&V>> {
         let all_args = self.collect_all_possible_vars(vec![vec![]].into_iter().collect(), &c.1);
         let all_contra_args =
             self.collect_all_possible_vars(vec![vec![]].into_iter().collect(), &c.2);
@@ -210,29 +250,61 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     .clone()
                     .into_iter()
                     .map(|contra| Ctor(c.0.clone(), args.clone(), contra.clone()))
-                    .collect::<Vec<Ctor<V>>>()
+                    .collect::<Vec<Ctor<&V>>>()
             })
-            .collect::<HashSet<Ctor<V>>>()
+            .collect::<HashSet<Ctor<&V>>>()
     }
 
-    #[cfg(test)]
+    pub fn lower_num(&self, x: u32) -> HashSet<&Ctor<u32>> {
+        self.lower[x as usize]
+            .iter()
+            .map(|h| &self.hctor_to_ctor[h.0 as usize])
+            .collect()
+    }
+
+    pub fn upper_num(&self, x: u32) -> HashSet<&Ctor<u32>> {
+        self.upper[x as usize]
+            .iter()
+            .map(|h| &self.hctor_to_ctor[h.0 as usize])
+            .collect()
+    }
+
+    pub fn lower_num_varified(&self, x: u32) -> HashSet<Ctor<&V>> {
+        self.lower[x as usize]
+            .iter()
+            .flat_map(|h| self.repack_ctor_over_var(self.hctor_to_ctor[h.0 as usize].clone()))
+            .collect()
+    }
+
+    pub fn upper_num_varified(&self, x: u32) -> HashSet<Ctor<&V>> {
+        self.upper[x as usize]
+            .iter()
+            .flat_map(|h| self.repack_ctor_over_var(self.hctor_to_ctor[h.0 as usize].clone()))
+            .collect()
+    }
+
     /// Copies and returns the set of constructors in x
-    fn lower_varified(&mut self, x: &V) -> HashSet<Ctor<V>> {
-        let num_x = self.to_num(x) as usize;
-        self.lower[num_x]
-            .iter()
-            .flat_map(|c| self.repack_ctor_over_var(c.clone()))
-            .collect()
+    pub fn lower_varified(&self, x: &V) -> HashSet<Ctor<V>> {
+        if let Some(num_x) = self.to_maybe_num(x) {
+            self.lower_num_varified(num_x)
+                .iter()
+                .map(|c| c.clone().repack(&mut V::clone))
+                .collect()
+        } else {
+            HashSet::default()
+        }
     }
 
-    #[cfg(test)]
     /// Copies and returns the set of constructors larger than x
-    fn upper_varified(&mut self, x: &V) -> HashSet<Ctor<V>> {
-        let num_x = self.to_num(x) as usize;
-        self.upper[num_x]
-            .iter()
-            .flat_map(|c| self.repack_ctor_over_var(c.clone()))
-            .collect()
+    pub fn upper_varified(&self, x: &V) -> HashSet<Ctor<V>> {
+        if let Some(num_x) = self.to_maybe_num(x) {
+            self.upper_num_varified(num_x)
+                .iter()
+                .map(|c| c.clone().repack(&mut V::clone))
+                .collect()
+        } else {
+            HashSet::default()
+        }
     }
 
     /// Copies and returns supersets of x. This is an expensive operation
@@ -264,11 +336,19 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
     /// Check if x is a subset of y
     pub fn is_subset(&self, x: &V, y: &V) -> bool {
         if let (Some(n_x), Some(n_y)) = (self.var_to_num.get(x), self.var_to_num.get(y)) {
-            self.supers[*n_x as usize].contains(n_y)
+            n_x == n_y || self.supers[*n_x as usize].contains(n_y)
         } else {
             // x and y are not in the constraint system
             false
         }
+    }
+
+    /// Pick a representative node for given SCC
+    pub fn pick_representative(&self, scc: u32) -> &V {
+        self.num_to_var[scc as usize]
+            .iter()
+            .next()
+            .expect("Given SCC is empty")
     }
 
     pub fn num_to_var(&self) -> &Vec<HashSet<V>> {
@@ -279,8 +359,12 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
         self.num_to_var.iter().flat_map(|s| s.clone()).collect()
     }
 
-    /// Reduce the constraint graph by computing the strongly
-    /// connected components and replacing the nodes with SCCs
+    /// Reduce the constraint graph by computing the strongly connected
+    /// components and replacing the nodes with SCCs.
+    ///
+    /// `solve` function relies on this function outputting SCCs in reverse
+    /// topological order to efficiently compute the transitive closure (which
+    /// is guaranteed by using Tarjan's algorithm `compute_scc`).
     pub fn compute_sccs(&mut self) {
         let mut sccs: Vec<Option<SCCId>> = vec![None; self.supers.len()];
         let mut scc_contents: Vec<HashSet<u32>> = Vec::new();
@@ -327,30 +411,45 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     .collect::<HashSet<u32>>()
             })
             .collect();
-        self.lower = scc_contents
+        // Re-build dirty supers, then check if any SCCs have merged, and mark
+        // their dirty super bit.
+        self.dirty_supers = scc_contents
             .iter()
-            .map(|vs| {
-                vs.iter()
-                    .flat_map(|v| {
-                        self.lower[*v as usize]
-                            .iter()
-                            .map(|ctor| ctor.clone().repack(&mut |x| sccs[x as usize].unwrap().0))
-                    })
-                    .collect::<HashSet<Ctor<u32>>>()
-            })
+            .map(|vs| vs.len() > 1 || vs.iter().any(|v| self.dirty_supers[*v as usize]))
             .collect();
-        self.upper = scc_contents
+        // Re-build constructor hashes
+        for ctor in self.hctor_to_ctor.iter_mut() {
+            ctor.repack_in_place(&mut |x| sccs[x as usize].unwrap().0);
+        }
+        self.ctor_to_hctor = self
+            .hctor_to_ctor
             .iter()
-            .map(|vs| {
-                vs.iter()
-                    .flat_map(|v| {
-                        self.upper[*v as usize]
-                            .iter()
-                            .map(|ctor| ctor.clone().repack(&mut |x| sccs[x as usize].unwrap().0))
-                    })
-                    .collect::<HashSet<Ctor<u32>>>()
-            })
+            .enumerate()
+            .map(|(i, c)| (c.clone(), HCtor(i as u32)))
             .collect();
+        // Merge lower/upper sets
+        let old_lower = std::mem::take(&mut self.lower);
+        self.lower.resize_with(scc_contents.len(), HashSet::default);
+        for (i, lower_i) in old_lower.into_iter().enumerate() {
+            let scc = sccs[i].unwrap().0 as usize;
+            if self.lower[scc].is_empty() {
+                self.lower[scc] = lower_i;
+            } else {
+                self.lower[sccs[i].unwrap().0 as usize].extend(lower_i);
+            }
+        }
+
+        let old_upper = std::mem::take(&mut self.upper);
+        self.upper.resize_with(scc_contents.len(), HashSet::default);
+        for (i, upper_i) in old_upper.into_iter().enumerate() {
+            let scc = sccs[i].unwrap().0 as usize;
+            if self.upper[scc].is_empty() {
+                self.upper[scc] = upper_i;
+            } else {
+                self.upper[sccs[i].unwrap().0 as usize].extend(upper_i);
+            }
+        }
+
         self.empty = scc_contents
             .iter()
             .map(|vs| vs.iter().any(|v| self.empty[*v as usize]))
@@ -473,20 +572,24 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                 self.print_stats();
             }
 
-            // Fine-grained dirty bits for supersets. See the comment
-            // below about dirty_ctor_sets for more detail (the same
-            // optimization for lower/upper). Reset these if the SCC
-            // computation has collapsed any cycles.
-            let mut dirty_supers = vec![
-                iteration_count == 0
-                    || old_scc_count != self.var_to_num.len();
-                self.supers.len()
-            ];
-
             profile("transitive closure", || {
-                // Compute transitive closure of subsets
+                // Compute transitive closure of subsets. The SCCs are ordered
+                // in reverse topological order, so we need to propagate only
+                // supersets only one level
                 for x in 0..self.supers.len() {
-                    self.transitive_closure_from(x as u32, &mut dirty_supers);
+                    for y in self.supers[x as usize].clone() {
+                        if !self.dirty_supers[y as usize] {
+                            // If the supersets of y haven't changed, then there
+                            // is no need to traverse it.
+                            continue;
+                        }
+                        for z in self.supers[y as usize].clone() {
+                            if self.supers[x as usize].insert(z) {
+                                self.dirty = true;
+                                self.dirty_supers[x as usize] = true;
+                            }
+                        }
+                    }
                 }
             });
 
@@ -513,6 +616,7 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                 ];
 
                 // Update upper & lower sets
+                let dirty_supers = &self.dirty_supers;
                 for (x, ys) in self.supers.iter().enumerate().filter(|p| dirty_supers[p.0]) {
                     for y in ys.iter() {
                         for upper in self.upper[*y as usize].clone() {
@@ -532,9 +636,14 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     self.constraint_breakdown();
                 }
 
+                // reset dirty_supers, so that we can capture which new edges
+                // will be added by constructor constraints.
+                self.dirty_supers.iter_mut().for_each(|v| *v = false);
+
                 // solve the whole system
                 profile("constructor constraints", || {
-                    self.add_constructor_constraints(&dirty_ctor_sets)
+                    self.add_constructor_constraints(&dirty_ctor_sets)?;
+                    self.add_ref_constraints_aggressively(&dirty_ctor_sets)
                 })?;
                 Ok(())
             })?;
@@ -556,8 +665,10 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     panic!("Constraint violation: 1 ⊆ {} ⊆ 0", x);
                 }
                 if !self.lower[x].is_empty() {
+                    let h = *self.lower[x].iter().next().unwrap();
+                    let ctor = self.hctor_to_ctor[h.0 as usize].clone();
                     return Err(ConstraintError::EmptynessViolation(Constraint(
-                        C(self.lower[x].iter().next().unwrap().clone()),
+                        C(ctor),
                         S(EmptySet),
                     )));
                 }
@@ -569,8 +680,10 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     continue;
                 }
                 if !self.upper[x].is_empty() {
+                    let h = *self.upper[x].iter().next().unwrap();
+                    let ctor = self.hctor_to_ctor[h.0 as usize].clone();
                     return Err(ConstraintError::EmptynessViolation(Constraint(
-                        C(self.upper[x].iter().next().unwrap().clone()),
+                        C(ctor),
                         S(EmptySet),
                     )));
                 }
@@ -613,14 +726,86 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
                     None
                 }
             })
-            .collect::<Vec<(usize, HashSet<Ctor<u32>>)>>()
+            .collect::<Vec<(usize, HashSet<HCtor>)>>()
         {
             for upper in &upper[x] {
                 for lower in &lowers {
-                    self.add_num_goal(Constraint(C(lower.clone()), C(upper.clone())))?;
+                    let lower_ctor = self.hctor_to_ctor[lower.0 as usize].clone();
+                    let upper_ctor = self.hctor_to_ctor[upper.0 as usize].clone();
+                    self.add_num_goal(Constraint(C(lower_ctor), C(upper_ctor)))?;
                 }
             }
         }
+        Ok(())
+    }
+
+    /// Adds goals from ref constructors while ignoring directionality
+    ///
+    /// ```
+    ///
+    /// x ⊆ ref(a..)
+    /// x ⊆ ref(b..)
+    /// -------------------
+    /// ref(b..) = ref(a..)
+    ///
+    /// ref(a..) ⊆ x
+    /// ref(b..) ⊆ x
+    /// -------------------
+    /// ref(b..) = ref(a..)
+    ///
+    /// ```
+    fn add_ref_constraints_aggressively(
+        &mut self,
+        dirty_ctor_sets: &Vec<bool>,
+    ) -> Result<(), ConstraintError<V>> {
+        use Term::*;
+        // the returned vector is filtered, so it is not ordered.
+        let ctors_of_dirty = |s: &Vec<HashSet<HCtor>>| {
+            s.iter()
+                .enumerate()
+                .filter_map(|(i, s)| {
+                    if dirty_ctor_sets[i] && !s.is_empty() {
+                        Some(s.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<HashSet<HCtor>>>()
+        };
+        let lowers_of_dirty = ctors_of_dirty(&self.lower);
+        let uppers_of_dirty = ctors_of_dirty(&self.upper);
+        let mut unify_ctors = |sets: &Vec<HashSet<HCtor>>| {
+            for set in sets {
+                let refs = set
+                    .iter()
+                    .filter_map(|h| {
+                        let ctor = &self.hctor_to_ctor[h.0 as usize];
+                        if ctor.0 == *REF {
+                            Some(ctor.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<Ctor<u32>>>();
+                if refs.is_empty() {
+                    continue;
+                }
+                // collapse the whole set of references by creating
+                // cycles between refs[0] and each of refs[1], ...,  refs[n]
+                for i in 1..refs.len() {
+                    self.add_num_goal(Constraint(C(refs[0].clone()), C(refs[i].clone())))?;
+                    self.add_num_goal(Constraint(C(refs[i].clone()), C(refs[0].clone())))?;
+                }
+                // for a in &refs {
+                //     for b in &refs {
+                //         self.add_num_goal(Constraint(C(a.clone()), C(b.clone())))?;
+                //     }
+                // }
+            }
+            Ok(())
+        };
+        unify_ctors(&lowers_of_dirty)?;
+        unify_ctors(&uppers_of_dirty)?;
         Ok(())
     }
 
@@ -629,13 +814,13 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
         let mut c2n: HashMap<Name, (usize, usize)> = HashMap::default();
         for cs in &self.upper {
             for c in cs {
-                let tag = c.0.clone();
+                let tag = self.hctor_to_ctor[c.0 as usize].0.clone();
                 c2n.entry(tag).or_default().1 += 1;
             }
         }
         for cs in &self.lower {
             for c in cs {
-                let tag = c.0.clone();
+                let tag = self.hctor_to_ctor[c.0 as usize].0.clone();
                 c2n.entry(tag).or_default().0 += 1;
             }
         }
@@ -644,35 +829,6 @@ impl<V: Eq + Clone + Hash + Debug> ConstraintSystem<V> {
         }
         let cart = c2n.values().map(|t| t.0 * t.1).sum::<usize>();
         println!("total cartesian product: {}", cart);
-    }
-
-    /// Computes the transitive closure of given variable, using the
-    /// subset constraint graph represented with `self.supers`
-    fn transitive_closure_from(&mut self, x: u32, dirty_supers: &mut Vec<bool>) {
-        // Compute the transitive closure by DFS
-        let mut visited = HashSet::default();
-        visited.insert(x.clone());
-        let mut worklist: Vec<u32> = self.supers[x as usize].clone().into_iter().collect();
-
-        while let Some(y) = worklist.pop() {
-            if visited.contains(&y) {
-                continue;
-            }
-
-            // self.dirty = add_to_multimap(&mut self.supers, x.clone(), y.clone()) || self.dirty;
-            if self.supers[x as usize].insert(y) {
-                self.dirty = true;
-                dirty_supers[x as usize] = true;
-            }
-
-            for z in &self.supers[y as usize] {
-                if !visited.contains(z) {
-                    worklist.push(z.clone());
-                }
-            }
-
-            visited.insert(y);
-        }
     }
 }
 
@@ -914,6 +1070,83 @@ mod tests {
         assert_eq!(&sys.upper_varified(&2), &upper);
         assert!(sys.upper_varified(&3).is_empty());
         assert!(sys.upper_varified(&4).is_empty());
+    }
+
+    #[test]
+    fn solve_nested() {
+        use SimpleTerm::*;
+        use Term::*;
+
+        // Testing the following set of constraints:
+        //
+        // c(1) ⊆ 2 ⊆ c(3) (∴ 1 ⊆ 3)
+        // d(4) ⊆ 1
+        // 3 ⊆ d(5)
+        //
+        // which imply 4 ⊆ 5
+        //
+        // The solution has the following sets:
+        // supersets:
+        // 1 -> {3}
+        // 2 -> {}
+        // 3 -> {}
+        // 4 -> {5}
+        // 5 -> {}
+        //
+        // lower:
+        // 2 -> {c(1)}
+        // 1, 3 -> {d(4)}
+        // everything else -> {}
+        //
+        // upper:
+        // 2 -> {c(3)}
+        // 1, 3 -> {d(5)}
+        // everything else -> {}
+
+        let mut sys = ConstraintSystem::new();
+
+        let goal_set = mk_hash_set(vec![
+            Constraint(C(Ctor::simple(Name::from("c"), vec![1], vec![])), S(LV(2))),
+            Constraint(S(LV(2)), C(Ctor::simple(Name::from("c"), vec![3], vec![]))),
+            Constraint(C(Ctor::simple(Name::from("d"), vec![4], vec![])), S(LV(1))),
+            Constraint(S(LV(3)), C(Ctor::simple(Name::from("d"), vec![5], vec![]))),
+        ]);
+
+        for goal in goal_set {
+            sys.add_goal(goal).unwrap();
+        }
+
+        sys.solve().unwrap();
+        println!("The solved system is: {:#?}", sys);
+
+        let unary_ctor = |name: &str, arg: u32| {
+            mk_hash_set(vec![Ctor::simple(Name::from(name), vec![arg], vec![])])
+        };
+
+        let c1 = unary_ctor("c", 1);
+        let c3 = unary_ctor("c", 3);
+        let d4 = unary_ctor("d", 4);
+        let d5 = unary_ctor("d", 5);
+
+        let set_3 = mk_hash_set(vec![3]);
+        let set_5 = mk_hash_set(vec![5]);
+
+        assert_eq!(&sys.compute_supersets(&1), &set_3);
+        assert!(sys.compute_supersets(&2).is_empty());
+        assert!(sys.compute_supersets(&3).is_empty());
+        assert_eq!(&sys.compute_supersets(&4), &set_5);
+        assert!(sys.compute_supersets(&5).is_empty());
+
+        assert_eq!(&sys.upper_varified(&1), &d5);
+        assert_eq!(&sys.upper_varified(&2), &c3);
+        assert_eq!(&sys.upper_varified(&3), &d5);
+        assert!(sys.upper_varified(&4).is_empty());
+        assert!(sys.upper_varified(&5).is_empty());
+        assert_eq!(&sys.lower_varified(&1), &d4);
+        assert_eq!(&sys.lower_varified(&2), &c1);
+        assert_eq!(&sys.lower_varified(&3), &d4);
+        assert!(&sys.lower_varified(&4).is_empty());
+        assert!(&sys.lower_varified(&4).is_empty());
     }
 
     #[test]

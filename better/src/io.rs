@@ -23,9 +23,6 @@ pub enum OutputMode {
 }
 
 impl OutputMode {
-    fn overwrite(self) -> bool {
-        self == OutputMode::Overwrite
-    }
     fn output_path(self, path: &Path, config: &Config) -> Option<PathBuf> {
         match self {
             OutputMode::Overwrite => Some(path.to_owned()),
@@ -35,7 +32,13 @@ impl OutputMode {
     }
     fn open_output(self, path: &Path, config: &Config) -> io::Result<Box<dyn Write>> {
         Ok(if let Some(path) = self.output_path(path, config) {
-            Box::new(OpenOptions::new().write(true).truncate(true).open(path)?)
+            Box::new(
+                OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(path)?,
+            )
         } else {
             // No output is given, write to stdout
             Box::new(io::stdout())
@@ -59,7 +62,7 @@ impl<'a> FileIO<'a> {
 
     pub fn write_file(&self, path: &Path, s: &str) -> io::Result<()> {
         let mut writer = self.config.output_mode.open_output(path, self.config)?;
-        writer.write(s.as_bytes())?;
+        writer.write_all(s.as_bytes())?;
         Ok(())
     }
 }
