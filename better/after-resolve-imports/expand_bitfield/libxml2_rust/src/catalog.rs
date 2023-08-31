@@ -5860,7 +5860,7 @@ unsafe extern "C" fn xmlCatalogXMLResolve(
                         if nbList < 50 as i32 {
                             let fresh53 = nbList;
                             nbList = nbList + 1;
-                            delegates[fresh53 as usize] = (*cur).URL;
+                            delegates[fresh53 as usize] = (*cur).URL as *const u8;
                         }
                         if ((*cur).children).is_null() {
                             xmlFetchXMLCatalogFile(cur);
@@ -5963,7 +5963,7 @@ unsafe extern "C" fn xmlCatalogXMLResolve(
                         if nbList_0 < 50 as i32 {
                             let fresh57 = nbList_0;
                             nbList_0 = nbList_0 + 1;
-                            delegates_0[fresh57 as usize] = (*cur).URL;
+                            delegates_0[fresh57 as usize] = (*cur).URL as *const u8;
                         }
                         if ((*cur).children).is_null() {
                             xmlFetchXMLCatalogFile(cur);
@@ -6136,7 +6136,7 @@ unsafe extern "C" fn xmlCatalogXMLResolveURI(
                     if nbList < 50 as i32 {
                         let fresh62 = nbList;
                         nbList = nbList + 1;
-                        delegates[fresh62 as usize] = (*cur).URL;
+                        delegates[fresh62 as usize] = (*cur).URL as *const u8;
                     }
                     if ((*cur).children).is_null() {
                         xmlFetchXMLCatalogFile(cur);
