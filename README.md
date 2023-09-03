@@ -6,7 +6,7 @@
 
 ## 二、软件架构
 
-<img src="./pictures/Safer_C2Rust架构图.png" alt="Safer_C2Rust架构图" />
+<img src="./res/pictures/Safer_C2Rust架构图.png" alt="Safer_C2Rust架构图" />
 
 本系统原型由两部分组成：
 
@@ -24,18 +24,18 @@
 
   ```
   c2rust/
-   + c2rust/ -- 使用c2rust v0.16.0版本，作为本项目翻译前端
-   + c-code/ -- C测试例
    + better/ -- 优化工具
+      + after-resolve-imports   -- 存放去除重复定义类型后的中间文件
+      + after-resolve-lifetimes -- 存放进行过生存分析并消除非必要unsafe后的中间文件
       + test-inputs/            -- 存放C2Rust翻译得到的初始Rust程序
-      + rewrite-invocations/
-      + rewrite-workspace/      -- 将test-inputs中的Rust程序复制到此文件下进行优化改写
+      + results                 -- 最终优化后的结果文件
+      + rewrite-workspace/      -- 优化过程中的临时文件夹
       + src/                    -- better优化工具功能代码
-        + bin/
-          + resolve-imports.rs  -- 去除重复类型算法
-          + resolve-lifetime.rs -- 安全性提升算法
-   + unsafe-fixer --优化工具
-   + unsafe-ana   --测试统计工具
+        + resolve-imports.rs  -- 去除重复类型算法
+        + resolve-lifetime.rs -- 安全性提升算法
+   + res          -- 项目资源文件
+   + unsafe-fixer -- unsafe 优化工具
+   + unsafe-ana   -- 测试统计工具
   ```
 
 + 优化流程
@@ -73,24 +73,20 @@
         ```shell
         sudo apt-get update
         sudo apt-get install git build-essential llvm clang libclang-dev cmake libssl-dev pkg-config python3
-2. 克隆仓库到本地文件夹
+
+2. 克隆项目仓库到本地
     ```shell
     git clone https://gitee.com/openeuler/c2rust.git
     ```
-3. 同步git子项目仓库
-    ```shell
-    cd c2rust
-    git submodule init
-    git submodule update
-    ```
 
-4. 安装`rust`
+3. 安装`rust`
    ```shell
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     source $HOME/.cargo/env
     ```
     > 注：如因网络问题失败，可尝试更换国内源
-5. 将`rust`工具链切换到`nightly-2021-11-22`版本
+
+4. 将`rust`工具链切换到`nightly-2021-11-22`版本
     ```shell
     rustup toolchain list
     ```
@@ -108,34 +104,41 @@
     ```shell
     rustup component add rustc-dev
     ```
-6. `c2rust`安装
+5. 原生`c2rust`源码下载
+   项目采用的原生c2rust版本为`release-v0.16.0`，可以通过执行以下以命令获取项目源码：
+   ```shell
+   cd your_path/c2rust/
+   git clone --branch v0.16.0 https://github.com/immunant/c2rust.git
+   ``` 
+6. 原生`c2rust`安装
     ```shell
     cd your_path/c2rust/c2rust
     cargo build --release
     ```
     > 完整安装教程参考：https://gitee.com/mirrors/C2Rust?_from=gitee_search#installation
     
-     > 速度过慢，或者超时错误，可更换`cargo`国内源
+    > 速度过慢，或者超时错误，可更换`cargo`国内源
     
 ## 五、使用教程
 
-
-
-### Curl测试
-
-> `curl`项目较大，根据机器配置，运行时间可能较长，快速验证可以先运行测试`json-c`项目
-
-执行以下命令运行测试脚本
+### Json-C测试
+执行以下命令运行测试脚本：
 ```shell
 cd your_path/c2rust/better
-$ ./curl-rust-run.sh
+$ ./json-c-run.sh
 ```
-
-> 优化前的项目文件位于 `test-input`文件夹中，中间结果位于`after-resolve-imports`与`after-resolve-lifetimes`,优化后的最终结果位于`result`文件夹，优化效果使用`c2rust/unsafe-ana`工具进行分析，`libxml2`与`Json-c`同此。
-
-
 最终编译结果如下：
-<img src="./pictures/curl.png" alt="Curl测试结果" />
+<img src="./res/pictures/jsonc.png" alt="Json-C测试结果" />
+
+- 优化前的项目文件位于 `test-input`文件夹中，中间结果位于`after-resolve-imports`与`after-resolve-lifetimes`,优化后的最终结果位于`result`文件夹，优化效果使用`c2rust/unsafe-ana`工具进行分析，`libxml2`与`curl`同此。
+
+- 本`json-c`的C源码选用的是`release-0.15`版本，可以通过执行以下以命令获取C源码：
+   ```shell
+   git clone --branch json-c-0.15-20200726  https://github.com/json-c/json-c.git
+   ``` 
+   
+
+- 优化输入为原版c2rust生成的项目文件，生成方法，可参考[c2rust文档](https://github.com/immunant/c2rust/tree/master/examples/json-c)
 
 ### libxml2测试
 
@@ -146,22 +149,25 @@ cd your_path/c2rust/better
 $ ./libxml2-run.sh
 ```
 
-
-
 最终编译结果如下：
-<img src="./pictures/libxml.png" alt="libxml2测试结果" />
+<img src="./res/pictures/libxml.png" alt="libxml2测试结果" />
 
-### Json-C测试
+- `libxml2`的C源码选用的是`release-v2.10`版本，可以通过执行以下以命令获取C源码：
+   ```shell
+   git clone --branch v2.10.0  https://gitee.com/umu618/libxml2.git
+   ``` 
+   
+- 优化输入为原版c2rust生成的项目文件，生成方法，可参考[c2rust文档](https://github.com/immunant/c2rust/tree/master/examples/libxml2)
+
+### Curl测试
+
+> `curl`项目较大，根据机器配置，运行时间可能较长
 
 执行以下命令运行测试脚本
-
 ```shell
 cd your_path/c2rust/better
-$ ./json-c-run.sh
+$ ./curl-rust-run.sh
 ```
 
-
-
 最终编译结果如下：
-<img src="./pictures/jsonc.png" alt="Json-C测试结果" />
-
+<img src="./res/pictures/curl.png" alt="Curl测试结果" />
