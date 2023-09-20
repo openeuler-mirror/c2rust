@@ -6,7 +6,7 @@
 
 ## 二、软件架构
 
-<img src="./res/pictures/Safer_C2Rust架构图.png" alt="Safer_C2Rust架构图" />
+<img src="./docs/pics/Safer_C2Rust_Arch.png" alt="Safer_C2Rust架构图" />
 
 本系统原型由两部分组成：
 
@@ -20,23 +20,22 @@
 
 ## 三、代码结构及运行流程
 
-+ 代码结构
++ 项目结构
 
   ```
   c2rust/
-   + better/ -- 优化工具
-      + after-resolve-imports   -- 存放去除重复定义类型后的中间文件
-      + after-resolve-lifetimes -- 存放进行过生存分析并消除非必要unsafe后的中间文件
-      + test-inputs/            -- 存放C2Rust翻译得到的初始Rust程序
-      + results                 -- 最终优化后的结果文件
-      + rewrite-workspace/      -- 优化过程中的临时文件夹
-      + src/                    -- better优化工具功能代码
-        + resolve-imports.rs  -- 去除重复类型算法
-        + resolve-lifetime.rs -- 安全性提升算法
-   + res          -- 项目资源文件
-   + unsafe-fixer -- unsafe 优化工具
-   + unsafe-ana   -- 测试统计工具
-  ```
+   + docs/           -- 项目文档
+   + exmamples/      -- 测试例
+   + safe-analyzer/  -- 安全指标分析工具
+   + scripts/        -- 辅助脚本，包括三个优化模块的默认前处理脚本
+   + src/            -- 项目源代码文件
+   + results/        -- （运行创建）结果数据，可由config.toml定义
+   + bin/            -- （运行创建）编译后的可执行文件，可由config.toml定义
+   + logs/           -- （运行创建）日志文件
+   - build.py        -- 自动构建脚本
+   - run.py          -- 运行入口脚本
+   - config.toml     -- 项目配置文件
+   - pyproject.toml  -- python环境配置文件
 
 + 优化流程
 
@@ -60,114 +59,134 @@
         Safer rust program：去除重复类型定义，消除非必要的unsafe，改写部分裸指针
   ```
 
-
-
 ## 四、安装教程
+
 1. 安装前置依赖
-    - openEuler/CentOS
+    + openEuler/CentOS
+
         ```shell
         sudo yum update
         sudo yum install git gcc gcc-c++ llvm llvm-devel clang clang-devel make cmake ninja-build openssl-devel pkgconfig python3
         ```
-    - Ubuntu/Debian
+
+    + Ubuntu/Debian
+
         ```shell
         sudo apt-get update
         sudo apt-get install git build-essential llvm clang libclang-dev cmake libssl-dev pkg-config python3
+        ```
 
 2. 克隆项目仓库到本地
+
     ```shell
     git clone https://gitee.com/openeuler/c2rust.git
     ```
 
 3. 安装`rust`
-   ```shell
+
+    ```shell
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+
+    ```shell
     source $HOME/.cargo/env
     ```
+
     > 注：如因网络问题失败，可尝试更换国内源
 
-4. 将`rust`工具链切换到`nightly-2021-11-22`版本
+4. 安装`safer-c2rust` 自动构建与运行的python环境，在项目目录下运行：
+
     ```shell
-    rustup toolchain list
+    pip3 install -e .
     ```
-    如果输出中没有`nightly-2021-11-22-x86_64-unknown-linux-gnu`则执行
+
+    > 注：如因网络问题失败，可尝试更换国内pip源
+
+5. 运行自动构建脚本：
+
     ```shell
-    rustup toolchain install nightly-2021-11-22
-    rustup override set nightly-2021-11-22
+    python3 build.py
     ```
-    执行完成后，再次执行
+
+    > 注：过程中可能因为github访问、或cargo源的网络问题而失败，可以尝试更换网络或者cargo源再次运行
+
+6. 将本地rust的lib加入环境变量，其中`aarch64-unknown-linux-gnu`与本机价格与操作系统相关，需要更改为本地rust文件夹名：
+
     ```shell
-    rustup toolchain list
+    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-aarch64-unknown-linux-gnu/lib/"' >> ~/.bashrc
     ```
-    确认当前`rust`工具链版本为：`nightly-2021-11-22-x86_64-unknown-linux-gnu (override)`
-    此时再执行以下命令为当前版本的Rust编译工具链添加rustc作为库使用
+
     ```shell
-    rustup component add rustc-dev
+    source ~/.bashrc
     ```
-5. 原生`c2rust`源码下载
-   项目采用的原生c2rust版本为`release-v0.16.0`，可以通过执行以下以命令获取项目源码：
-   ```shell
-   cd your_path/c2rust/
-   git clone --branch v0.16.0 https://github.com/immunant/c2rust.git
-   ``` 
-6. 原生`c2rust`安装
-    ```shell
-    cd your_path/c2rust/c2rust
-    cargo build --release
-    ```
-    > 完整安装教程参考：https://gitee.com/mirrors/C2Rust?_from=gitee_search#installation
-    
-    > 速度过慢，或者超时错误，可更换`cargo`国内源
-    
+
 ## 五、使用教程
+`safer-c2rust`的运行入口是根目录中的`run.py`文件，运行命令
 
-### Json-C测试
-执行以下命令运行测试脚本：
 ```shell
-cd your_path/c2rust/better
-$ ./json-c-run.sh
+python3 run.py --help
 ```
-最终编译结果如下：
-<img src="./res/pictures/jsonc.png" alt="Json-C测试结果" />
 
-- 优化前的项目文件位于 `test-input`文件夹中，中间结果位于`after-resolve-imports`与`after-resolve-lifetimes`,优化后的最终结果位于`result`文件夹，优化效果使用`c2rust/unsafe-ana`工具进行分析，`libxml2`与`curl`同此。
+可以获取脚本的使用方法，`run.py`脚本包括了三个子命令，分别是:
 
-- 本`json-c`的C源码选用的是`release-0.15`版本，可以通过执行以下以命令获取C源码：
-   ```shell
-   git clone --branch json-c-0.15-20200726  https://github.com/json-c/json-c.git
-   ``` 
-   
+- `c2rust`: 原生`c2rust`的命令接口
+- `safer`: `safer-c2rust`的命令接口
+- `stat`: 结果统计命令
 
-- 优化输入为原版c2rust生成的项目文件，生成方法，可参考[c2rust文档](https://github.com/immunant/c2rust/tree/master/examples/json-c)
+可以通过在子命令后加入`--help`选项获取帮助信息，如：
+
+```shell
+python3 run.py safer --help
+```
+
+### 简单使用情况：
+`run.py`的子命令可以链式调用或者单独使用，例如将`path/to/c_project`的c语言项目，直接转换为优化后的rust项目，并获得优化统计结果，可以直接运行：
+
+```shell
+python3 run.py c2rust -c path/to/c_project safer stat
+```
+
+在没有指定`work_dir`的情况下，运行结果或生成在项目目录下的`results/<c_project_foldername>_<date>_<time>`文件夹中，其中包括以下文件：
+
+- `P0_original`: 输入c项目的备份
+- `P1_after_c2rust`: 经过原生c2rust转换之后的项目
+- `P2_after_resolve_imports`: 经过imports resovlve模块优化后的项目
+- `P3_after_resolve_lifetime`: 经过lifetime resolve模块优化后的项目
+- `P4_result`: 经过unsafe fix模块优化后的最终结果
+- `report_detail.json`: 优化后的各种指标的详细记录
+- `report_summary.json`: 优化后指标的统计结果
+
+子命令可以单独执行，例如已经有运行结果的文件夹`path/to/result`，可以运行
+
+```
+python3 run.py -w path/to/result stat
+```
+
+只执行项目的优化数据统计，生成`report_detail.json`与`report_summary.json`文件。
+
+### 自定义执行：
+为了增强`run.py`的灵活性，以应对更多的复杂情况，其中`c2rust`子命令，它包括以下子选项：
+- `--mode`: 该选项的值可以为`auto`或者`script`，选择`auto`的情况下将获取`--gencc`的值自动进行`c2rust`转换，而如果选择`script`，则执行`--script`的脚本进行转换，它的默认值为`auto`；
+- `--gencc`: 该选项的值可以为`cmake`或者`makefile`，这里将决定该用什么工具生成`compile_commands.json`文件，它的默认值为`cmake`；
+- `--script`: 如果`--mode`的值为`script`，那么程序将执行这里给出的`shell`或者`python`脚本进行转换，需要注意的是，转换脚本必须接收且只接收两个参数，第一个为需要转换c项目地址，第二个为输出地址。
+
+`safer`子命令，包括以下子选项
+- `--is_resolve_imports`: 是否使用imports resolve模块进行优化，默认为`True`；
+- `--resolve_imports_pre_script`: 指定imports resolve模块优化前的处理脚本，需要python脚本，默认为`scri
+                                  pts/pre_resolve_imports.py`，如有需要，可以参考默认脚本编进行编写；
+- `--is_resolve_lifetime`: 同`--is_resolve_imports`；
+- `--resolve_lifetime_pre_script`: `--resolve_imports_pre_script`；
+- `--is_fix_unsafe`: 同`--is_resolve_imports`；
+- `--fix_unsafe_pre_script`: 同`--resolve_imports_pre_script`。
+
+
+## 六、测试例运行
+### Json-C测试
+详见目录中 `example/jsonc`文件夹
 
 ### libxml2测试
-
-执行以下命令运行测试脚本
-
-```shell
-cd your_path/c2rust/better
-$ ./libxml2-run.sh
-```
-
-最终编译结果如下：
-<img src="./res/pictures/libxml.png" alt="libxml2测试结果" />
-
-- `libxml2`的C源码选用的是`release-v2.10`版本，可以通过执行以下以命令获取C源码：
-   ```shell
-   git clone --branch v2.10.0  https://gitee.com/umu618/libxml2.git
-   ``` 
-   
-- 优化输入为原版c2rust生成的项目文件，生成方法，可参考[c2rust文档](https://github.com/immunant/c2rust/tree/master/examples/libxml2)
+详见目录中 `example/libxml2`文件夹
 
 ### Curl测试
+详见目录中 `example/curl`文件夹
 
-> `curl`项目较大，根据机器配置，运行时间可能较长
-
-执行以下命令运行测试脚本
-```shell
-cd your_path/c2rust/better
-$ ./curl-rust-run.sh
-```
-
-最终编译结果如下：
-<img src="./res/pictures/curl.png" alt="Curl测试结果" />

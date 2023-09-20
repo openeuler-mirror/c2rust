@@ -1,0 +1,10 @@
+[project]
+target-path = "bin"
+results-path = "results"
+
+[rust]
+version = "nightly-2021-11-22"
+
+[c2rust]
+version = "v0.16.0"
+repo = "https://gitee.com/mirrors/C2Rust.git"
