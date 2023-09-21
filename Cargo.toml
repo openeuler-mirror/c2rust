@@ -1,0 +1,56 @@
+[package]
+name = "safer-c2rust"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Enable debug symbols on release builds
+[profile.release]
+debug = 2
+incremental = true  # enable incremental compilation but keep the codegen-units as the default value to still get a fast program in the end
+
+[dependencies]
+ahash = { version = "0.7.2" }
+clap = { version = "3.2", features = ["derive"] }
+colored = { version = "=2.0.0" }
+env_logger ={ version = "0.8"}
+itertools = { version = "0.9.0" }
+lazy_static = { version = "1.4" }
+log = { version = "=0.4.18" }
+rand = { version = "0.8.5" }
+regex = { version = "1.5" }
+ron = { version = "0.6" }
+rustfix = { version = "0.6.0" }
+rustc_tools_util = { version = "0.2.0" }
+serde = { version = "1.0", features = ["derive"]}
+serde_json = { version = "1.0" }
+string_cache = { version = "0.8" }
+syn = { version = "2.0", features=["full", "visit-mut", "extra-traits"] }
+walkdir = { version = "2.3.3" }
+
+[features]
+# default features
+default = ["profiling"]
+# profile certain operations
+profiling = []
+# use standard library hash instead of ahash
+std_hash = []
+# use equality-based reasoning instead of subset-based reasoning in the set-based solver
+add_back_edges = []
+# iteratively compact SCCs during set constraint solving, this may speed up large programs with lots of cycles in the constraint graph
+iterative_scc_compaction = []
+# debug the set solver by printing stats about intermediate stages
+debug_set_solver = []
+
+[[bin]]
+name = "import-resolver"
+path = "src/bin/import_resolver.rs"
+
+[[bin]]
+name = "lifetime-resolver"
+path = "src/bin/lifetime_resolver.rs"
+
+[[bin]]
+name = "unsafe-fixer"
+path = "src/bin/unsafe_fixer.rs"

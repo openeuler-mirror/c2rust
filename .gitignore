@@ -1,2 +1,13 @@
-target
-./*.rlib
+.vscode/
+
+# productions
+target/
+safe-analyzer/target/
+logs/
+/bin/
+C2Rust/
+results/
+*.egg-info/
+
+# python temp
+__pycache__
