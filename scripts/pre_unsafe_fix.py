@@ -1,8 +1,9 @@
-import re
 from pathlib import Path
 from typing import Dict
 
 import click
+
+from utils import file_text_replace_by_pattern
 
 
 # let ref mut <variable> = <value>; to let <variable> = &mut (<value>); 
@@ -12,22 +13,11 @@ PATTERNS  = {
     r"let\s+ref\s+(\w+)\s*=\s*(.*);"             : r"let \1 = &(\2);"
     }
 
-
-def text_replace_by_pattern(target: Path, search_pattern: str, replace_pattern: str):
-    with target.open("r") as f:
-        content = f.read()
-    
-    content = re.sub(search_pattern, replace_pattern, content)
-
-    with target.open("w") as f:
-        f.write(content)
-
-
 def fix_ref(target: Path, patterns: Dict):    
     files = list(target.glob("**/*.rs"))
     for file in files:
         for search_pattern, replace_pattern in patterns.items():    
-            text_replace_by_pattern(file, search_pattern, replace_pattern)
+            file_text_replace_by_pattern(file, search_pattern, replace_pattern)
     
 
 @click.command()

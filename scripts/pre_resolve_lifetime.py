@@ -4,6 +4,8 @@ from typing import Dict
 
 import click
 
+from utils import file_text_replace
+
 REPLACE_TYPES= {
     'libc::c_char': 'i8',
     'libc::c_uchar': 'u8',
@@ -19,15 +21,6 @@ REPLACE_TYPES= {
     'libc::c_double': 'f64'
 }
 
-def text_replace(target: Path, old_text: str, new_text: str):
-    with target.open("r") as f:
-        content = f.read()
-
-    content = content.replace(old_text, new_text)
-
-    with target.open("w") as f:
-        f.write(content)
-
 
 def replace_types(target: Path, types: Dict):
     # fix libc::c_char recognize as u8 bug is aarch64 platform
@@ -37,7 +30,7 @@ def replace_types(target: Path, types: Dict):
     files = list(target.glob("**/*.rs"))
     for file in files:
         for old_type, new_type in types.items():
-            text_replace(file, old_type, new_type)
+            file_text_replace(file, old_type, new_type)
     
 
 @click.command()

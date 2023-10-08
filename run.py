@@ -3,42 +3,22 @@ import json
 import shutil 
 from pathlib import Path
 from datetime import datetime
-from typing import Dict
 
-import toml
 import click
 from loguru import logger
-from plumbum import local
 
+from scripts.utils import exec_cmd, setup_logger, get_configs
+from scripts.patch_unsafe_fix import fix_unsafe_error_cause_by_type_cast
+from scripts.patch_compile_commands import fix_oe_gcc_args
+from scripts.patch_c2rust_results import fix_dup_symbol_errors, fix_type_errors
+
+logger.remove()
+logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> <level>{level} {message}</level>",
+           level="INFO", colorize=True ) 
 
 BASE = Path(__file__).parent.resolve()
-with (BASE / "config.toml").open("r") as f:
-    CONFIG = toml.load(f)
+CONFIG = get_configs(BASE / "config.toml")
 RESULT = BASE / CONFIG["project"]["results-path"]
-
-def setup_logger():
-    log_folder = Path(BASE / "logs")
-    log_folder.mkdir(exist_ok=True)
-    
-    logger.remove()
-    logger.add(log_folder / "run.log", format="{time:YYYY-MM-DD HH:mm:ss} {level} {message}", 
-               backtrace=True, diagnose=True, rotation="1 day", level="DEBUG")
-    logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> <level>{level} {message}</level>",  
-               level="INFO", colorize=True ) 
-
-def execute(cmd, path=BASE, dismiss_error=False):
-    logger.info(f"Executing command: {cmd} ... ")
-    tool, args = cmd.split(" ", 1)
-    with local.cwd(path):
-        try:
-            result = local[tool](args.split(" "))
-        except Exception as e:
-            if dismiss_error:
-                return ""
-            logger.exception(f"Executing Command failed!" )
-            sys.exit(1)
-        
-    return result
 
 
 def resolve_imports(input: Path,  pre_script: Path, inplace=False):
@@ -52,15 +32,14 @@ def resolve_imports(input: Path,  pre_script: Path, inplace=False):
         
     logger.info(f"Start resolve imports for {output} | inplace: {inplace}")
     logger.info(f"run the pre-process script({pre_script}) ...")
-    execute(f"python3 {pre_script} {output}", output)
-    logger.success("Execute pre-process success!")
+    exec_cmd(f"python3 {pre_script} {output}", output)
     
     logger.info(f"Start build the {output} to generate the deps ...")
-    execute(f"cargo build", output)
-    logger.success(f"build {output} success!")
-        
+    exec_cmd(f"cargo build", output, env={"RUSTFLAGS": "-Awarnings"})
+    
+    logger.info(f"Start resolve imports ...")
     imports_resolver = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "import-resolver"
-    execute(f"{imports_resolver} {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", output)
+    exec_cmd(f"{imports_resolver} {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", output)
     logger.success(f"resolve imports success! result: {output}")
     
 
@@ -75,15 +54,15 @@ def resolve_lifetime(input: Path, pre_script: Path, inplace=False):
         
     logger.info(f"Start resolve lifetime for {input} | inplace: {inplace}")
     logger.info(f"run the pre-process script({pre_script}) ...")
-    execute(f"python3 {pre_script} {output}", output)
-    logger.success("Execute pre-process success!")
+    exec_cmd(f"python3 {pre_script} {output}", output)
     
     logger.info(f"Start build the {output} to generate the deps ...")
-    execute(f"cargo build", output)
-    logger.success(f"build {output} success!")
+    exec_cmd(f"cargo build", output, env={"RUSTFLAGS": "-Awarnings"})
         
+    logger.info(f"Start resolve lifetime ...")
     lifetime_resolver = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "lifetime-resolver"
-    execute(f"{lifetime_resolver} -f --merge-field-lifetimes {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", output, dismiss_error=True)
+    exec_cmd(f"{lifetime_resolver} -f --merge-field-lifetimes {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", 
+            output, dismiss_error=True, timeout=7200)
     logger.success(f"resolve lifetime success! result: {output}")
     
 
@@ -98,12 +77,13 @@ def fix_unsafe(input: Path, pre_script: Path, inplace=False):
         
     logger.info(f"Start fix unsafe for {input} | inplace: {inplace}")
     logger.info(f"run the pre-process script({pre_script}) ...")
-    execute(f"python3 {pre_script} {output}", output)
-    logger.success("Execute pre-process success!")
+    exec_cmd(f"python3 {pre_script} {output}", output)
     
-    lifetime_resolver = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "unsafe-fixer"
-    execute(f"{lifetime_resolver} {output}", output)
-    logger.success(f"resolve imports success! result: {output}")
+    logger.info(f"Start build the {output} to generate the deps ...")
+    unsafe_fixer = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "unsafe-fixer"
+    exec_cmd(f"{unsafe_fixer} {output}", output)
+    fix_unsafe_error_cause_by_type_cast(output)
+    logger.success(f"fix unsafe success! result: {output}")
     
 
 def parse_safe_analysis_result(result: Path):
@@ -112,27 +92,27 @@ def parse_safe_analysis_result(result: Path):
     
     # analysis the type define
     logger.info(f"Start analysis the type define of : ({result}) ...")
-    type_define = execute(f"{safe_analyzer} --count-type-define {result}", result.parent)
+    type_define = exec_cmd(f"{safe_analyzer} --count-type-define {result}", result.parent)
     type_define = type_define.splitlines()
     total_title, total_number = type_define[0].split(":")
     type_define_res = {total_title.strip(): total_number.strip()}
     type_define_details = []
+    
     for line in type_define[2:]:
         _name, _type, _count = line.split(",")
         type_define_details.append({"name": _name.strip(), "type": _type.strip(), "count": _count.strip()})
-        
+    
     type_define_res["details"] = type_define_details
-    logger.success(f"Analysis the type define of {result} success!")
     
     # analysis the unsafe block/function and the raw pointers
     logger.info(f"Start analysis the unsafe block/function and the raw pointers of : ({result}) ...")
-    unsafe = execute(f"{safe_analyzer} {result}", result.parent).splitlines()
+    unsafe = exec_cmd(f"{safe_analyzer} {result}", result.parent).splitlines()
     unsafe_res = {}
     for line in unsafe:
         name, value = line.split(":")
         unsafe_res[name.strip()] = int(value.strip())
     
-    deref_rp = execute(f"{safe_analyzer} --count-deref-rp {result}", result.parent).splitlines()
+    deref_rp = exec_cmd(f"{safe_analyzer} --count-deref-rp {result}", result.parent).splitlines()
     deref_rp_title, deref_rp_number = deref_rp[0].split(":")
     unsafe_res[deref_rp_title.strip()] = int(deref_rp_number.strip())
     logger.success(f"Analysis the unsafe block/function and the raw pointers of {result} success!")
@@ -140,10 +120,8 @@ def parse_safe_analysis_result(result: Path):
     return {"type define result": type_define_res, "unsafe result": unsafe_res}
     
 
-
-
 @click.group(chain=True)
-@click.option("--work_dir", "-w", type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path),
+@click.option("--work_dir", "-w", type=click.Path(exists=False, file_okay=False, writable=True, path_type=Path, resolve_path=True),
               default=RESULT, help="The work directory", show_default=f"{RESULT}/<project-name>_<datetime>")
 @click.pass_context
 def cli(ctx, work_dir: Path):
@@ -153,33 +131,77 @@ def cli(ctx, work_dir: Path):
 
 
 @cli.command()
-@click.option("--c_project_path", "-c", type=click.Path(exists=True, file_okay=False, path_type=Path, resolve_path=True))
+@click.option("--src", "-s", type=click.Choice(["local", "osc"], case_sensitive=False), default="local", show_default=True,
+              help="""Choose the source of the c project, 
+                    if you want to translate the local c project, you should specify the `--local` option; 
+                    if you want to translate the c project from osc, you should specify the `--project_name` and `--osc_branch` option.""")
+@click.option("--local_path", type=click.Path(exists=True, file_okay=False, path_type=Path, resolve_path=True),
+              help="The local path of the c project, if the src is `local`, you should specify this option")
+@click.option("--project_name", type=str, help="The project name, if the src is `orc`, you should specify this option")
+@click.option("--osc_branch", type=str, default=CONFIG["osc"]["default-branch"], show_default=True, 
+              help="The osc distribution, if the src is `osc`, you should specify this option")
 @click.option("--mode", type=click.Choice(["auto","script"], case_sensitive=False), default="auto", show_default=True,
               help="""Choose the mode to do the original c2rsut translate,
                     if use auto mode, you need to specify the compile_commands.json generate method by `--gencc`; 
                     if use script mode, you need to specify the script path by `--script`.""")
-@click.option("--gencc", type=click.Choice(["cmake", "makefile"], case_sensitive=False), default="cmake", show_default=True,
+@click.option("--gencc", type=click.Choice(["makefile", "cmake"], case_sensitive=False), default="makefile", show_default=True,
               help="""Choose the method to generate compile_commands.json, if use script, you should set the `--mode` to AUTO.""")
-@click.option("--script", type=click.Path(exists=True, dir_okay=False, path_type=Path), show_default=True,
+@click.option("--script", type=click.Path(exists=True, dir_okay=False, path_type=Path, resolve_path=True), show_default=True,
               help="""The shell or python script to do the c2rust translation, you should set the `--mode` to SCRIPT, 
                   metion that the script should take two arguments, the first is the c project path, the second is the output path.""")
 @click.pass_context
-def c2rust(ctx, c_project_path: Path, mode: str, gencc: str, script: Path):
-    work_dir = ctx.obj["work_dir"].resolve()
+def c2rust(ctx, src: str, local_path: Path, project_name: str, osc_branch: str, mode: str, gencc: str, script: Path):
+    work_dir = ctx.obj["work_dir"]
     
-    # if output hasn't defined, create a folder automatically
+    if src == "local":
+        project_name = local_path.stem
+        
+    # if output is project default result folder, create a sub-folder automatically
     if work_dir == RESULT:
-        work_dir = work_dir / f"{c_project_path.stem}_{datetime.now().strftime('%y%m%d_%H%M%S')}"
+        work_dir = work_dir / f"{project_name}_{datetime.now().strftime('%y%m%d_%H%M%S')}"
         ctx.obj["work_dir"] = work_dir
     
     if work_dir.exists():
         shutil.rmtree(work_dir)
     logger.info(f"Crate project work directory: {work_dir}")
     work_dir.mkdir(parents=True)
+    
+    logger.add(work_dir / "debug.log", format="{time:YYYY-MM-DD HH:mm:ss} {level} {message}", 
+               backtrace=True, diagnose=True, level="DEBUG")
         
     c_project = work_dir / "P0_original"
-    logger.info(f"Copy the original c project to work directory as {c_project} ...")
-    shutil.copytree(c_project_path, c_project)
+    
+    if src == "local":
+        logger.info(f"Copy the original c project to work directory as {c_project} ...")
+        shutil.copytree(local_path, c_project)
+        logger.success(f"Copy the C project to work directory success!")
+    else:
+        logger.info(f"Clone the original c project from osc to work directory as {c_project} ...")
+        spec_dir = work_dir / f"{project_name}_{osc_branch}"
+        url = CONFIG['osc']['openEuler'] + project_name
+        exec_cmd(f"git clone --depth=1 -b {osc_branch} {url} {spec_dir}", work_dir)
+        logger.success(f"Clone the {project_name} from osc success!")
+        
+        logger.info(f"Start build the original C prjoect({project_name}) by rpmbuild ...")
+        # build_dir = work_dir / "_c-build"
+        # build_dir.mkdir(exist_ok=True)
+        exec_cmd(f'rpmbuild --define "_sourcedir {spec_dir}"  --define "_topdir {c_project}" -bc --nocheck {project_name}.spec', spec_dir)
+        logger.success(f"Build the original C prjoect({project_name}) by rpmbuild success!")
+        
+        for folder in (c_project / "BUILD").iterdir():
+            if folder.is_dir() and folder.name.startswith(project_name):
+                c_dir_builded =  folder
+                break
+        else:
+            logger.error(f"Can't find the builded C project in {c_project / 'BUILD'}")
+            sys.exit(1)
+
+        if project_name in CONFIG["osc-project-build-folder"]:
+            c_dir_builded = c_dir_builded / CONFIG["osc-project-build-folder"][project_name]
+        
+        c_project = c_dir_builded
+        logger.success(f"Get project({project_name}) for osc({url}) success! The project is in {c_project}")
+    
     
     after_translate = work_dir / "P1_after_c2rust"
     after_translate.mkdir(parents=True, exist_ok=True)
@@ -188,35 +210,43 @@ def c2rust(ctx, c_project_path: Path, mode: str, gencc: str, script: Path):
         if script is None:
             logger.error("You should specify the script path by `--script`")
             sys.exit(1)
-            
-        script = script.resolve()
         
         logger.info("Start the original c2rsut translate by SCRIPT mode ...")
         if script.suffix == ".py":
-            execute(f"python3 {script} {c_project} {after_translate}", work_dir)
+            exec_cmd(f"python3 {script} {c_project} {after_translate}", work_dir)
         elif script.suffix == ".sh":
-            execute(f"{script} {c_project} {after_translate}", work_dir)
+            exec_cmd(f"{script} {c_project} {after_translate}", work_dir)
         else:
             logger.error("The script should be a python or shell script!")
             sys.exit(1)
     else:
-        logger.info("Start the original c2rsut translate by AUTO mode ...")
+        logger.info("Start the original c2rsut translation by AUTO mode ...")
         logger.info(f"Generate compile_commands.json by {mode} ...")
         if gencc == "cmake":
             cmake_cache = c_project / "CMakeCache.txt"
             if cmake_cache.exists():
                 cmake_cache.unlink()
-            execute("cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON", c_project)
+            exec_cmd("cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON", c_project)
         else:
-            execute("intercept-build make", c_project)
+            exec_cmd("make clean", c_project, dismiss_error=True)
+            exec_cmd("intercept-build make", c_project)
             
-        compile_commands = c_project / "compile_commands.json"    
+        compile_commands = c_project / "compile_commands.json"
+        
+        logger.info(f"Fix the compile_commands.json ...")
+        fix_oe_gcc_args(compile_commands)
         logger.success(f"Generate {compile_commands}(size: {compile_commands.stat().st_size}) success!")
-            
+        
         c2rust = BASE / "bin" / "c2rust" / "c2rust"
         
         logger.info("Start the original c2rsut translate ...")
-        execute(f"{c2rust} transpile {compile_commands} -e -o {after_translate}")
+        exec_cmd(f"{c2rust} transpile {compile_commands} -e -o {after_translate}", c_project)
+        
+    fix_type_errors(after_translate)
+    fix_dup_symbol_errors(after_translate)
+    
+    logger.info(f"Start build the result({after_translate}) to verify ....")
+    exec_cmd("cargo build", after_translate,  env={"RUSTFLAGS": "-Awarnings"})
         
     logger.success(f"Translate by original c2rsut success! The result is in {after_translate}")
     
@@ -262,9 +292,9 @@ def safer(ctx, is_resolve_imports, resolve_imports_pre_script, is_resolve_lifeti
     result = work_dir / "P4_result"
     
     logger.info(f"Re-build the result({result}) to verify ....")
-    execute("cargo build", result)
+    exec_cmd("cargo build", result, env={"RUSTFLAGS": "-Awarnings"})
     logger.success(f"build the result({result}) success!")
-    execute("cargo clean", result)
+    exec_cmd("cargo clean", result)
     logger.success(f"Successfully finished the safer-c2rust processes!")
     
     
@@ -304,6 +334,8 @@ def stat(ctx):
     after = stat_detail["P4_result"]["unsafe result"]["Safe Function Without Unsafe Block Number"]
     if func_contains_raw_pointer_before == 0:
         result = "null"
+    elif func_contains_raw_pointer_before < (after - before):
+        result = "100%"
     else:
         result = (after - before) / func_contains_raw_pointer_before
         result = f"{result*100:.2f}%"
@@ -338,5 +370,4 @@ def stat(ctx):
     
 
 if __name__ == "__main__":
-    setup_logger()
     cli(obj={})

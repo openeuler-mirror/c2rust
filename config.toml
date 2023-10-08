@@ -2,6 +2,13 @@
 target-path = "bin"
 results-path = "results"
 
+[osc]
+default-branch = "openEuler-22.03-LTS-SP1-release"
+openEuler = "https://gitee.com/src-openeuler/"
+
+[osc-project-build-folder]
+curl = "build-full"
+
 [rust]
 version = "nightly-2021-11-22"
 

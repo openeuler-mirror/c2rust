@@ -1,14 +1,8 @@
-## 使用 safer-c2rust 转换 JsonC
+## 使用 safer-c2rust 转换 Json-c
 
-1. 本测试中，选用的是`release-0.15`版本，可以通过执行以下以命令获取C源码：
-    
-    ```shell
-    git clone --branch json-c-0.15-20200726  https://github.com/json-c/json-c.git
-    ```
+本测试中，选用的是`openEuler-22.03-LTS-SP1`上默认jsonc版本，运行命令如下：
 
-2. 在项目根目录下运行：
-
-    ```
-    python3 run.py c2rust -c examples/jsonc/json-c safer stat
-    ```
+```shell
+python3 run.py c2rust --src osc --project_name json-c --osc_branch openEuler-22.03-LTS-SP1 --mode auto --gencc cmake safer stat
+```
 
