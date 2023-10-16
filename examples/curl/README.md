@@ -1,23 +1,9 @@
 ## 使用 safer-c2rust 转换 curl
 
-1. 本测试中，选用的是`v7.79.1`版本，可以通过执行以下以命令获取C源码：
-    
-    ```shell
-    git clone --depth=1 --branch curl-7_79_1  https://github.com/curl/curl.git
-    ```
+本测试中，选用的是`openEuler-22.03-LTS-SP1`上默认curl版本，运行命令如下：
 
-2. 安装前置依赖：
-    - ubuntu/debian
-    ```shell
-    
-    ```
-    - centos/openEuler
-    ```shell
-    ```
+```shell
+python3 run.py c2rust --src osc --project_name curl --osc_branch openEuler-22.03-LTS-SP1 safer stat
+```
 
-
-3. 在项目根目录下运行：
-
-    ```
-    python3 run.py c2rust -c examples/curl/curl --mode="script" --script examples/curl/translate.sh safer stat
-    ```
+> 根据运行环境，运行时间可能需要1~2个小时

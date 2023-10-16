@@ -2,23 +2,23 @@
 
 ## 一、介绍
 
-​        本项目将在[c2rust](https://github.com/immunant/c2rust)已有工作的基础之上，实现一个可将不安全的Rust代码转换为更安全的Rust代码的原型系统，该系统可删除重复的类型定义，移除部分不必要的unsafe标记，并将部分裸指针转换为安全引用。
+本项目将在[c2rust](https://github.com/immunant/c2rust)已有工作的基础之上，实现一个可将不安全的Rust代码转换为更安全的Rust代码的原型系统，该系统可删除重复的类型定义，移除部分不必要的unsafe标记，并将部分裸指针转换为安全引用。
 
 ## 二、软件架构
 
 <img src="./docs/pics/Safer_C2Rust_Arch.png" alt="Safer_C2Rust架构图" />
 
-本系统原型由两部分组成：
+本系统原型由三部分组成：
 
 + **翻译前端 - c2rust**
 
-  将c2rust作为本系统原型的**翻译前端**，进行C到Rust的翻译；将得到的翻译结果作为**优化工具better**的输入
+  将c2rust作为本系统原型的**翻译前端**，进行C到Rust的翻译；将得到的翻译结果作为**优化工具better**的输入。
 
-+ **优化工具 - better**
++ **优化工具 - safer**
 
-  对c2rust翻译得到的初始版本的rust代码进行优化，主要分为两部分：**Resolve-Imports**和**Resolve-lifetime**，进行重复类型定义的去除和安全性的提升。
+  对c2rust翻译得到的初始版本的Rust代码进行优化，主要分为三个优化模块：**Imports Resolver**、**Lifetime Resolver**和**Unsafe Fixer**，进行重复类型定义的去除和安全性的提升。
 
-## 三、代码结构及运行流程
++ **统计工具 - stat**
 
 + 项目结构
 
@@ -37,7 +37,7 @@
    - config.toml     -- 项目配置文件
    - pyproject.toml  -- python环境配置文件
 
-+ 优化流程
++ 项目结构
 
   ```
        C Program 
@@ -73,7 +73,7 @@
 
         ```shell
         sudo apt-get update
-        sudo apt-get install git build-essential llvm clang libclang-dev cmake libssl-dev pkg-config python3
+        sudo apt-get install git build-essential llvm llvm-dev clang libclang-dev make cmake ninja-build libssl-dev pkg-config python3
         ```
 
 2. 克隆项目仓库到本地
@@ -105,7 +105,7 @@
 5. 运行自动构建脚本：
 
     ```shell
-    python3 build.py
+    python3 build.py -a
     ```
 
     > 注：过程中可能因为github访问、或cargo源的网络问题而失败，可以尝试更换网络或者cargo源再次运行
@@ -139,38 +139,58 @@ python3 run.py --help
 python3 run.py safer --help
 ```
 
-### 简单使用情况：
-`run.py`的子命令可以链式调用或者单独使用，例如将`path/to/c_project`的c语言项目，直接转换为优化后的rust项目，并获得优化统计结果，可以直接运行：
+### 处理本地项目文件
+
+`run.py`的子命令可以链式调用或者单独使用，例如将`path/to/c_project`的C语言项目，直接转换为优化后的Rust项目，并获得优化统计结果，可以直接运行：
 
 ```shell
-python3 run.py c2rust -c path/to/c_project safer stat
+python3 run.py c2rust --local_path path/to/c_project safer stat
 ```
+
+### 从`osc`获取原始项目运行
+
+通过设置项目名与`osc`分支名，可以直接远程获取C项目与默认编译选项，其中`osc`的的源地址可以在`config.toml`中进行配置，运行命令如下：
+
+```shell
+python3 run.py c2rust --src osc --project_name NAME --osc_branch BRANCH safer stat
+```
+
+### 使用自定义脚本进行`C2Rust`转换
+
+默认情况下，`--mode`选项为`auto`，此时运行脚本会选择使用`cmake`或者`make`（默认）工具进行原生c2rust转换，但是用户可以通过将自定义脚本进行原生c2rust转换，通过将`--mode`设为`script`并使用`--script`指定一个shell或者python脚本运行。
+
+```shell
+python3 run.py c2rust --local_path path/to/c_project --mode script  --script FILE safer stat
+```
+
+### 项目结果
 
 在没有指定`work_dir`的情况下，运行结果或生成在项目目录下的`results/<c_project_foldername>_<date>_<time>`文件夹中，其中包括以下文件：
 
-- `P0_original`: 输入c项目的备份
-- `P1_after_c2rust`: 经过原生c2rust转换之后的项目
-- `P2_after_resolve_imports`: 经过imports resovlve模块优化后的项目
-- `P3_after_resolve_lifetime`: 经过lifetime resolve模块优化后的项目
-- `P4_result`: 经过unsafe fix模块优化后的最终结果
-- `report_detail.json`: 优化后的各种指标的详细记录
-- `report_summary.json`: 优化后指标的统计结果
+-`P0_original`: 输入c项目的备份
+-`P1_after_c2rust`: 经过原生c2rust转换之后的项目
+-`P2_after_resolve_imports`: 经过**imports resolver**模块优化后的项目
+-`P3_after_resolve_lifetime`: 经过**lifetime resolver**模块优化后的项目
+-`P4_result`: 经过**unsafe fixer**模块优化后的最终结果
+-`report_detail.json`: 优化后的各种指标的详细记录
+-`report_summary.json`: 优化后指标的统计结果
 
-子命令可以单独执行，例如已经有运行结果的文件夹`path/to/result`，可以运行
+### 选项说明
 
-```
-python3 run.py -w path/to/result stat
-```
+- `-w, --work_dir`: 工具的工作文件夹，默认情况下，会生成在`./results/<project-name>_<datetime>`文件中
 
-只执行项目的优化数据统计，生成`report_detail.json`与`report_summary.json`文件。
+#### `c2rust`子命令选项
 
-### 自定义执行：
-为了增强`run.py`的灵活性，以应对更多的复杂情况，其中`c2rust`子命令，它包括以下子选项：
-- `--mode`: 该选项的值可以为`auto`或者`script`，选择`auto`的情况下将获取`--gencc`的值自动进行`c2rust`转换，而如果选择`script`，则执行`--script`的脚本进行转换，它的默认值为`auto`；
-- `--gencc`: 该选项的值可以为`cmake`或者`makefile`，这里将决定该用什么工具生成`compile_commands.json`文件，它的默认值为`cmake`；
+- `-s, --src`: 该选项的值可以为`local`（默认）或者`osc`，为`local`时需要`--local_path`指定C项目文件夹，为`osc`时，需要`--project_name`指定项目名称与`--osc_branch`指定`osc`分支名称
+- `--local_path`: 指定C项目文件夹
+- `--project_name`: 指定`osc`上的项目名称
+- `--osc_branch`: 指定`osc`分支名称，默认为：openEuler-22.03-LTS-SP1-release
+- `--mode`: 该选项的值可以为`auto`（默认）或者`script`，选择`auto`的情况下将获取`--gencc`的值自动进行`c2rust`转换，而如果选择`script`，则执行`--script`的脚本进行转换
+- `--gencc`: 该选项的值可以为`cmake`或者`makefile`（默认），这里将决定该用什么工具生成`compile_commands.json`文件
 - `--script`: 如果`--mode`的值为`script`，那么程序将执行这里给出的`shell`或者`python`脚本进行转换，需要注意的是，转换脚本必须接收且只接收两个参数，第一个为需要转换c项目地址，第二个为输出地址。
 
-`safer`子命令，包括以下子选项
+#### `safer`子命令，包括以下子选项
+
 - `--is_resolve_imports`: 是否使用imports resolve模块进行优化，默认为`True`；
 - `--resolve_imports_pre_script`: 指定imports resolve模块优化前的处理脚本，需要python脚本，默认为`scri
                                   pts/pre_resolve_imports.py`，如有需要，可以参考默认脚本编进行编写；
@@ -179,14 +199,18 @@ python3 run.py -w path/to/result stat
 - `--is_fix_unsafe`: 同`--is_resolve_imports`；
 - `--fix_unsafe_pre_script`: 同`--resolve_imports_pre_script`。
 
+#### `stat`子命令没有选项
 
 ## 六、测试例运行
+
 ### Json-C测试
+
 详见目录中 `example/jsonc`文件夹
 
 ### libxml2测试
+
 详见目录中 `example/libxml2`文件夹
 
 ### Curl测试
-详见目录中 `example/curl`文件夹
 
+详见目录中 `example/curl`文件夹
