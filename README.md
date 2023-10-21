@@ -94,7 +94,35 @@
 
     > 注：如因网络问题失败，可尝试更换国内源
 
-4. 安装`safer-c2rust` 自动构建与运行的python环境，在项目目录下运行：
+4. 将本地rust的lib加入`LD_LIBRARY_PATH`环境变量，文件夹位于`$HOME/.rustup/toolchains/nightly-2021-11-22-<PLATFORM>-<OS>/lib`与`$HOME/.rustup/toolchains/nightly-2021-11-22-<PLATFORM>-<OS>/lib/rustlib/<PLATFORM>-<OS>/lib`内，其中`<PLATFORM>`与`<OS>`依赖于具体的架构与操作系统：
+
++ 如在操作系统为`openEuler`、架构为`arm64`的情况下，运行：
+
+    ```shell
+    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-aarch64-unknown-linux-gnu/lib/":$LD_LIBRARY_PATH' >> ~/.bashrc
+    ```
+
+    ```shell
+    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-aarch64-unknown-linux-gnu/lib/rustlib/aarch64-unknown-linux-gnu/lib/":$LD_LIBRARY_PATH' >> ~/.bashrc
+    ```
+
++ 如在操作系统为`Ubuntu`、架构为`x86_64`平台上，则运行：
+
+    ```shell
+    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-x86_64-unknown-linux-gnu/lib/":$LD_LIBRARY_PATH' >> ~/.bashrc
+    ```
+
+    ```shell
+    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/":$LD_LIBRARY_PATH' >> ~/.bashrc
+    ```
+
+  最后运行：
+
+  ```shell
+  source ~/.bashrc
+  ```
+    
+5. 安装`safer-c2rust` 自动构建与运行的python环境，在项目目录下运行：
 
     ```shell
     pip3 install -e .
@@ -102,7 +130,7 @@
 
     > 注：如因网络问题失败，可尝试更换国内pip源
 
-5. 运行自动构建脚本：
+6. 运行自动构建脚本：
 
     ```shell
     python3 build.py -a
@@ -110,17 +138,8 @@
 
     > 注：过程中可能因为github访问、或cargo源的网络问题而失败，可以尝试更换网络或者cargo源再次运行
 
-6. 将本地rust的lib加入环境变量，其中`aarch64-unknown-linux-gnu`与本机价格与操作系统相关，需要更改为本地rust文件夹名：
-
-    ```shell
-    echo 'export LD_LIBRARY_PATH="$HOME/.rustup/toolchains/nightly-2021-11-22-aarch64-unknown-linux-gnu/lib/"' >> ~/.bashrc
-    ```
-
-    ```shell
-    source ~/.bashrc
-    ```
-
 ## 五、使用教程
+
 `safer-c2rust`的运行入口是根目录中的`run.py`文件，运行命令
 
 ```shell
@@ -129,9 +148,9 @@ python3 run.py --help
 
 可以获取脚本的使用方法，`run.py`脚本包括了三个子命令，分别是:
 
-- `c2rust`: 原生`c2rust`的命令接口
-- `safer`: `safer-c2rust`的命令接口
-- `stat`: 结果统计命令
++ `c2rust`: 原生`c2rust`的命令接口
++ `safer`: `safer-c2rust`的命令接口
++ `stat`: 结果统计命令
 
 可以通过在子命令后加入`--help`选项获取帮助信息，如：
 
@@ -139,13 +158,23 @@ python3 run.py --help
 python3 run.py safer --help
 ```
 
-### 处理本地项目文件
+### 子命令链式调用
 
 `run.py`的子命令可以链式调用或者单独使用，例如将`path/to/c_project`的C语言项目，直接转换为优化后的Rust项目，并获得优化统计结果，可以直接运行：
 
 ```shell
 python3 run.py c2rust --local_path path/to/c_project safer stat
 ```
+
+### 子命令单独调用
+
+如果想使用`safer`子命令对已经使用`c2rust`工具转换的项目进行优化，需要这样运行：
+
+```shell
+python3 run.py -w path/to/result safer --project path/to/c2rust_result_project 
+```
+
+这条命令将已经使用原生`c2rust`工具转换的结果`path/to/c2rust_result_project`使用`safer`工具优化，并将最终结果存储在`path/to/result`文件夹中
 
 ### 从`osc`获取原始项目运行
 
@@ -163,6 +192,8 @@ python3 run.py c2rust --src osc --project_name NAME --osc_branch BRANCH safer st
 python3 run.py c2rust --local_path path/to/c_project --mode script  --script FILE safer stat
 ```
 
+
+
 ### 项目结果
 
 在没有指定`work_dir`的情况下，运行结果或生成在项目目录下的`results/<c_project_foldername>_<date>_<time>`文件夹中，其中包括以下文件：
@@ -177,27 +208,24 @@ python3 run.py c2rust --local_path path/to/c_project --mode script  --script FIL
 
 ### 选项说明
 
-- `-w, --work_dir`: 工具的工作文件夹，默认情况下，会生成在`./results/<project-name>_<datetime>`文件中
++ `-w, --work_dir`: 工具的工作文件夹，默认情况下，会生成在`./results/<project-name>_<datetime>`文件中
 
 #### `c2rust`子命令选项
 
-- `-s, --src`: 该选项的值可以为`local`（默认）或者`osc`，为`local`时需要`--local_path`指定C项目文件夹，为`osc`时，需要`--project_name`指定项目名称与`--osc_branch`指定`osc`分支名称
-- `--local_path`: 指定C项目文件夹
-- `--project_name`: 指定`osc`上的项目名称
-- `--osc_branch`: 指定`osc`分支名称，默认为：openEuler-22.03-LTS-SP1-release
-- `--mode`: 该选项的值可以为`auto`（默认）或者`script`，选择`auto`的情况下将获取`--gencc`的值自动进行`c2rust`转换，而如果选择`script`，则执行`--script`的脚本进行转换
-- `--gencc`: 该选项的值可以为`cmake`或者`makefile`（默认），这里将决定该用什么工具生成`compile_commands.json`文件
-- `--script`: 如果`--mode`的值为`script`，那么程序将执行这里给出的`shell`或者`python`脚本进行转换，需要注意的是，转换脚本必须接收且只接收两个参数，第一个为需要转换c项目地址，第二个为输出地址。
++ `-s, --src`: 该选项的值可以为`local`（默认）或者`osc`，为`local`时需要`--local_path`指定C项目文件夹，为`osc`时，需要`--project_name`指定项目名称与`--osc_branch`指定`osc`分支名称
++ `--local_path`: 指定C项目文件夹
++ `--project_name`: 指定`osc`上的项目名称
++ `--osc_branch`: 指定`osc`分支名称，默认为：openEuler-22.03-LTS-SP1
++ `--mode`: 该选项的值可以为`auto`（默认）或者`script`，选择`auto`的情况下将获取`--gencc`的值自动进行`c2rust`转换，而如果选择`script`，则执行`--script`的脚本进行转换
++ `--gencc`: 该选项的值可以为`cmake`或者`makefile`（默认），这里将决定该用什么工具生成`compile_commands.json`文件
++ `--script`: 如果`--mode`的值为`script`，那么程序将执行这里给出的`shell`或者`python`脚本进行转换，需要注意的是，转换脚本必须接收且只接收两个参数，第一个为需要转换c项目地址，第二个为输出地址。
 
 #### `safer`子命令，包括以下子选项
 
-- `--is_resolve_imports`: 是否使用imports resolve模块进行优化，默认为`True`；
-- `--resolve_imports_pre_script`: 指定imports resolve模块优化前的处理脚本，需要python脚本，默认为`scri
-                                  pts/pre_resolve_imports.py`，如有需要，可以参考默认脚本编进行编写；
-- `--is_resolve_lifetime`: 同`--is_resolve_imports`；
-- `--resolve_lifetime_pre_script`: `--resolve_imports_pre_script`；
-- `--is_fix_unsafe`: 同`--is_resolve_imports`；
-- `--fix_unsafe_pre_script`: 同`--resolve_imports_pre_script`。
++ `--project`: 如果要单独调用`safer`子命令，该选项可以设置safer工具进行优化的目标，通常为c2rust转换后的结果，
++ `--is_resolve_imports`: 是否使用imports-resolver模块进行优化，默认为`True`；
++ `--is_resolve_lifetime`: 同`--is_resolve_imports`；
++ `--is_fix_unsafe`: 同`--is_resolve_imports`；
 
 #### `stat`子命令没有选项
 

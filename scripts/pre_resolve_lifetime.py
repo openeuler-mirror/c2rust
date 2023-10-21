@@ -18,6 +18,7 @@ REPLACE_TYPES= {
     'libc::c_long': 'i64',
     'libc::c_ulong': 'u64',
     'libc::c_schar': 'i8',
+    'libc::c_float': 'f32',
     'libc::c_double': 'f64'
 }
 
