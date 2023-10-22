@@ -7,8 +7,8 @@ from datetime import datetime
 import click
 from loguru import logger
 
-from scripts.utils import exec_cmd, setup_logger, get_configs
-from scripts.patch_unsafe_fix import fix_unsafe_error_cause_by_type_cast
+from scripts.utils import exec_cmd, get_configs, validate_project_compilability
+from scripts.patch_unsafe_fix import fix_unsafe_error
 from scripts.patch_compile_commands import fix_oe_gcc_args
 from scripts.patch_c2rust_results import fix_dup_symbol_errors, fix_type_errors
 
@@ -21,16 +21,14 @@ CONFIG = get_configs(BASE / "config.toml")
 RESULT = BASE / CONFIG["project"]["results-path"]
 
 
-def resolve_imports(input: Path,  pre_script: Path, inplace=False):
-    if inplace:
-        output = input
-    else:
-        output = input.parent / "P2_after_resolve_imports"
-        if output.exists():
-            shutil.rmtree(output)
-        shutil.copytree(input, output)
-        
-    logger.info(f"Start resolve imports for {output} | inplace: {inplace}")
+def resolve_imports(input: Path, rollback=False):
+    output = input.parent / "P2_after_resolve_imports"
+    pre_script = BASE / "scripts" / "pre_resolve_imports.py"
+    
+    shutil.rmtree(output, ignore_errors=True)
+    shutil.copytree(input, output)
+            
+    logger.info(f"Start resolve imports for {output} ...")
     logger.info(f"run the pre-process script({pre_script}) ...")
     exec_cmd(f"python3 {pre_script} {output}", output)
     
@@ -40,19 +38,29 @@ def resolve_imports(input: Path,  pre_script: Path, inplace=False):
     logger.info(f"Start resolve imports ...")
     imports_resolver = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "import-resolver"
     exec_cmd(f"{imports_resolver} {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", output)
-    logger.success(f"resolve imports success! result: {output}")
+    
+    validate_res = validate_project_compilability(output)
+    if validate_res["success"]:
+        logger.success(f"resolve imports success! result: {output}")
+        return
+    
+    if not rollback:
+        logger.error(f"resolve imports failed! result: {output}")
+        exit(1)
+        
+    logger.info(f"resolve imports failed, Roll back to before optimization!")
+    shutil.rmtree(output)
+    shutil.copytree(input, output)
     
 
-def resolve_lifetime(input: Path, pre_script: Path, inplace=False):
-    if inplace:
-        output = input
-    else:
-        output = input.parent / "P3_after_resolve_lifetime"
-        if output.exists():
-            shutil.rmtree(output)
-        shutil.copytree(input, output)
+def resolve_lifetime(input: Path, rollback=False):
+    output = input.parent / "P3_after_resolve_lifetime"
+    pre_script = BASE / "scripts" / "pre_resolve_lifetime.py"
+    
+    shutil.rmtree(output, ignore_errors=True)
+    shutil.copytree(input, output)
         
-    logger.info(f"Start resolve lifetime for {input} | inplace: {inplace}")
+    logger.info(f"Start resolve lifetime for {input} ... ")
     logger.info(f"run the pre-process script({pre_script}) ...")
     exec_cmd(f"python3 {pre_script} {output}", output)
     
@@ -63,28 +71,56 @@ def resolve_lifetime(input: Path, pre_script: Path, inplace=False):
     lifetime_resolver = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "lifetime-resolver"
     exec_cmd(f"{lifetime_resolver} -f --merge-field-lifetimes {output / 'lib.rs'} -L {output / 'target' / 'debug' / 'deps'}", 
             output, dismiss_error=True, timeout=7200)
-    logger.success(f"resolve lifetime success! result: {output}")
     
-
-def fix_unsafe(input: Path, pre_script: Path, inplace=False):
-    if inplace:
-        output = input
-    else:
-        output = input.parent / "P4_result"
-        if output.exists():
-            shutil.rmtree(output)
-        shutil.copytree(input, output)
+    validate_res = validate_project_compilability(output)
+    if validate_res["success"]:
+        logger.success(f"resolve lifetime success! result: {output}")
+        return
+    
+    if not rollback:
+        logger.error(f"resolve lifetime failed! result: {output}")
+        exit(1)
         
-    logger.info(f"Start fix unsafe for {input} | inplace: {inplace}")
+    logger.info(f"resolve lifetime failed, Roll back to before optimization!")
+    shutil.rmtree(output)
+    shutil.copytree(input, output)
+        
+    
+def fix_unsafe(input: Path, rollback=False):
+    output = input.parent / "P4_result"
+    pre_script = BASE / "scripts" / "pre_unsafe_fix.py"
+    
+    shutil.rmtree(output, ignore_errors=True)
+    shutil.copytree(input, output)
+        
+    logger.info(f"Start fix unsafe for {input} ...")
     logger.info(f"run the pre-process script({pre_script}) ...")
     exec_cmd(f"python3 {pre_script} {output}", output)
     
-    logger.info(f"Start build the {output} to generate the deps ...")
+    logger.info(f"Start fix unsafe ...")
     unsafe_fixer = BASE / CONFIG["project"]["target-path"] / "safer-c2rust" / "unsafe-fixer"
     exec_cmd(f"{unsafe_fixer} {output}", output)
-    fix_unsafe_error_cause_by_type_cast(output)
-    logger.success(f"fix unsafe success! result: {output}")
     
+    validate_res = validate_project_compilability(output)
+    if validate_res["success"]:
+        logger.success(f"fix unsafe success! result: {output}")
+        return
+    
+    fix_unsafe_error(output, validate_res["build_errors"])
+    
+    validate_res = validate_project_compilability(output)
+    if validate_res["success"]:
+        logger.success(f"fix unsafe success! result: {output}")
+        return
+    
+    if not rollback:
+        logger.error(f"fix unsafe failed! result: {output}")
+        exit(1)
+    
+    logger.info(f"fix unsafe failed, Roll back to before optimization!")
+    shutil.rmtree(output)
+    shutil.copytree(input, output)
+
 
 def parse_safe_analysis_result(result: Path):
     logger.info(f"Start analysis the safety performance of : ({result}) ...")
@@ -241,59 +277,73 @@ def c2rust(ctx, src: str, local_path: Path, project_name: str, osc_branch: str, 
         
         logger.info("Start the original c2rsut translate ...")
         exec_cmd(f"{c2rust} transpile {compile_commands} -e -o {after_translate}", c_project)
-        
-    fix_type_errors(after_translate)
-    fix_dup_symbol_errors(after_translate)
+          
+    # fix_type_errors(after_translate)
+    # fix_dup_symbol_errors(after_translate)
     
-    logger.info(f"Start build the result({after_translate}) to verify ....")
-    exec_cmd("cargo build", after_translate,  env={"RUSTFLAGS": "-Awarnings"})
+    validate_res = validate_project_compilability(after_translate)
+    if not validate_res["success"]:
+        logger.error(f"Translate by original c2rsut failed! The result is in {after_translate}")
+        exit(1)
         
     logger.success(f"Translate by original c2rsut success! The result is in {after_translate}")
     
 
 @cli.command()
+@click.option("--project", type=click.Path(exists=True, file_okay=False, path_type=Path, resolve_path=True),
+              help="The project path of the result after original translation, set it if you want to `safer` tools without `c2rust` sub-command")
 @click.option("--is_resolve_imports", "-im", type=bool, default=True, help="Turn the imports resolver on", show_default=True)
-@click.option("--resolve_imports_pre_script",  type=click.Path(exists=True, dir_okay=False, path_type=Path), 
-              default= BASE / "scripts" / "pre_resolve_imports.py", show_default=True,
-              help="Specify the pre-process script of imports resolver")
 @click.option("--is_resolve_lifetime", "-lt", type=bool, default=True, help="Turn the lifetime resolver on", show_default=True)
-@click.option("--resolve_lifetime_pre_script",  type=click.Path(exists=True, dir_okay=False, path_type=Path), 
-              default= BASE / "scripts" / "pre_resolve_lifetime.py", show_default=True,
-              help="Specify the pre-process script of lifetime resolver")
 @click.option("--is_fix_unsafe", "-us", type=bool, default=True, help="Turn the unsafe fixer on")
-@click.option("--fix_unsafe_pre_script",  type=click.Path(exists=True, dir_okay=False, path_type=Path), 
-              default= BASE / "scripts" / "pre_unsafe_fix.py", show_default=True,
-              help="Specify the pre-process script of unsafe fixer")
 @click.pass_context
-def safer(ctx, is_resolve_imports, resolve_imports_pre_script, is_resolve_lifetime, resolve_lifetime_pre_script, 
-          is_fix_unsafe, fix_unsafe_pre_script):
-    # if output hasn't defined, use c2rust's output path
+def safer(ctx, project, is_resolve_imports, is_resolve_lifetime, is_fix_unsafe):
     work_dir = ctx.obj["work_dir"].resolve()
+    
+    if project:
+        if work_dir == RESULT:
+            project_name = project.stem
+            work_dir = work_dir / f"{project_name}_{datetime.now().strftime('%y%m%d_%H%M%S')}"
+            ctx.obj["work_dir"] = work_dir
+            
+        after_c2rust = work_dir / "P1_after_c2rust"
+        
+        if not after_c2rust.exists():
+            shutil.copytree(project, after_c2rust)
+    
+    debug_log = work_dir / "debug.log"
+    if not debug_log.exists():
+        logger.add(debug_log, format="{time:YYYY-MM-DD HH:mm:ss} {level} {message}", backtrace=True, diagnose=True, level="DEBUG")
     
     logger.info(f"Start the safer-c2rust processes ...")
     if is_resolve_imports:
         if not (work_dir / "P1_after_c2rust").is_dir():
             logger.error("You should has the original c2rust result in the work directory before do the imports resolve!")
             sys.exit(1)
-        resolve_imports(work_dir / "P1_after_c2rust", resolve_imports_pre_script)
+        resolve_imports(work_dir / "P1_after_c2rust", rollback=False)
+    else:
+        logger.info(f"Skip the imports resolve process!")
+        shutil.copytree(work_dir / "P1_after_c2rust", work_dir / "P2_after_resolve_imports")
     
     if is_resolve_lifetime:
         if not (work_dir / "P2_after_resolve_imports").is_dir():
             logger.error("You should has the imports resolved result in the work directory before do the lifetime resolve!")
             sys.exit(1)
-        resolve_lifetime(work_dir / "P2_after_resolve_imports", resolve_lifetime_pre_script)
+        resolve_lifetime(work_dir / "P2_after_resolve_imports", rollback=True)
+    else:
+        logger.info(f"Skip the lifetime resolve process!")
+        shutil.copytree(work_dir / "P2_after_resolve_imports", work_dir / "P3_after_resolve_lifetime")
     
     if is_fix_unsafe:
         if not (work_dir / "P3_after_resolve_lifetime").is_dir():
             logger.error("You should has the lifetime resolved result in the work directory before do the unsafe fix!")
             sys.exit(1)
-        fix_unsafe(work_dir / "P3_after_resolve_lifetime", fix_unsafe_pre_script)
+        fix_unsafe(work_dir / "P3_after_resolve_lifetime", rollback=False)
+    else:
+        logger.info(f"Skip the unsafe fix process!")
+        shutil.copytree(work_dir / "P3_after_resolve_lifetime", work_dir / "P4_result")
     
     result = work_dir / "P4_result"
     
-    logger.info(f"Re-build the result({result}) to verify ....")
-    exec_cmd("cargo build", result, env={"RUSTFLAGS": "-Awarnings"})
-    logger.success(f"build the result({result}) success!")
     exec_cmd("cargo clean", result)
     logger.success(f"Successfully finished the safer-c2rust processes!")
     

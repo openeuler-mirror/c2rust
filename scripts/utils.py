@@ -1,5 +1,6 @@
 import re
 import sys
+import json
 import toml
 from pathlib import Path
 from typing import Dict, List
@@ -36,7 +37,7 @@ def setup_logger(log_folder: Path):
     logger.add(log_folder / "run.log", format="{time:YYYY-MM-DD HH:mm:ss} {level} {message}", 
                backtrace=True, diagnose=True, rotation="1 day", level="DEBUG")
     logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> <level>{level} {message}</level>",  
-               level="INFO", colorize=True ) 
+               level="DEBUG", colorize=True ) 
 
         
 def exec_cmd(cmd: str, path :Path, env: Dict = {}, dismiss_error=False, timeout=None):
@@ -54,7 +55,7 @@ def exec_cmd(cmd: str, path :Path, env: Dict = {}, dismiss_error=False, timeout=
                     result = tool(sub_cmds[1:], timeout=timeout)
         except ProcessExecutionError as e:
             if dismiss_error:
-                return e.stderr
+                return e.stdout
             logger.exception(f"Executing Command({cmd}) failed!" )
             sys.exit(1)
         except ProcessTimedOut as e:
@@ -66,8 +67,51 @@ def exec_cmd(cmd: str, path :Path, env: Dict = {}, dismiss_error=False, timeout=
         
     return result
 
+
+def validate_project_compilability(path: Path) -> dict:
+    logger.info(f"Validating project({path}) compilability ... ")
+    result = {}
+    build_errors = []
+    
+    build_msgs_raw = exec_cmd("cargo build -q --message-format=json", path, env={"RUSTFLAGS": "-Awarnings"}, dismiss_error=True)
+    build_msgs = [json.loads(line) for line in build_msgs_raw.splitlines()]
+    for build_msg in build_msgs:
+        if build_msg["reason"] == "compiler-artifact" or build_msg["reason"] == "build-script-executed":
+            continue
+        
+        if build_msg["reason"] == "build-finished":
+            result["success"] = build_msg["success"]
+                
+        if build_msg["reason"] == "compiler-message":
+            msg = build_msg["message"]
+            if msg["level"] == "error" and msg["code"] and msg["spans"]:
+                build_error = {}
+                build_error["code"] = msg["code"]["code"]
+                build_error["label"] = msg["spans"][0]["label"]
+                build_error["file"] = msg["spans"][0]["file_name"]
+                build_error["line_start"] = msg["spans"][0]["line_start"]
+                build_error["line_end"] = msg["spans"][0]["line_end"]
+                build_error["col_start"] = msg["spans"][0]["column_start"]
+                build_error["col_end"] = msg["spans"][0]["column_end"]
+                build_error["text"] = msg["spans"][0]["text"]
+                if msg["children"]:
+                    build_error["error_detail"] = msg["children"][0]["message"]
+                    
+                build_errors.append(build_error)
+                logger.debug(f"Find build error: {build_error}")
+                
+    result["build_errors"] = build_errors
+    
+    if result["success"]:
+        logger.info(f"Project({path}) is compilable!")
+    else:
+        logger.info(f"Project({path}) is not compilable! Try to fix it ...")
+    
+    return result
+
     
 def parse_cagro_build_errors(build_output) -> List:
+    
     build_errors = []
     
     lines = build_output.splitlines()
@@ -116,11 +160,8 @@ def get_configs(config_file: Path):
     
 if __name__ == "__main__":
     setup_logger(Path("/home/csslab/sandbox"))
-    res = exec_cmd("cargo build", Path("/home/csslab/c2rust/results/libarchive_231007_171144/P1_after_c2rust"), 
-                   env={"RUSTFLAGS": "-Awarnings"}, dismiss_error=True)
-    errors = parse_cagro_build_errors(res)
-    for error in errors:
-        logger.info(error)
-    
+    # res = exec_cmd("cargo build", Path("/home/csslab/c2rust/results/libarchive_231007_171144/P1_after_c2rust"), 
+    #                env={"RUSTFLAGS": "-Awarnings"}, dismiss_error=True)
+    errors = validate_project_compilability(Path("/home/csslab/c2rust/results/libarchive_231010_222013/P3_after_resolve_lifetime"))
 
     #logger.info(exec_cmd("ls -l", Path("results/libxml2-2.9_230924_161038/P3_after_resolve_lifetime/")))

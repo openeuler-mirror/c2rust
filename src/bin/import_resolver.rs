@@ -210,7 +210,7 @@ impl RewritePass {
         let can_remove_unsafe = self.is_safe_fn(ctx, &name);
 
         // check if we can remove `unsafe`
-        if fn_header.unsafety == Unsafety::Unsafe && can_remove_unsafe {
+        if fn_header.unsafety == Unsafety::Unsafe && false {
             println!("Remove unsafe from {}", name);
             self.make_suggestion(
                 ctx,

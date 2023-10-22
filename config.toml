@@ -3,7 +3,7 @@ target-path = "bin"
 results-path = "results"
 
 [osc]
-default-branch = "openEuler-22.03-LTS-SP1-release"
+default-branch = "openEuler-22.03-LTS-SP1"
 openEuler = "https://gitee.com/src-openeuler/"
 
 [osc-project-build-folder]
